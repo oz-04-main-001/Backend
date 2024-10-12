@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "oz-04-main-001"
+version = "0.1.0"
+description = ""
+authors = ["taewoo-dev <twin9774@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = "^5.1.2"
+psycopg2 = "^2.9.9"
+django-restframework = "^0.0.1"
+djangorestframework-simplejwt = "^5.3.1"
+requests = "^2.32.3"
+python-dotenv = "^1.0.1"
+django-storages = "^1.14.4"
+boto3 = "^1.35.39"
+django-filter = "^24.3"
+drf-spectacular = "^0.27.2"
+gunicorn = "^23.0.0"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+isort = "^5.13.2"
+mypy = "^1.11.2"
+django-stubs = "^5.1.0"
+coverage = "^7.6.2"
+django-extensions = "^3.2.3"
+ipython = "^8.28.0"
+djangorestframework-stubs = "^3.15.1"
+django-debug-toolbar = "^4.4.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

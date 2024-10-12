@@ -1,0 +1,41 @@
+name: Code Quality Checks
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+
+      - name: Install Packages & Libraries
+        run: |
+          poetry install
+
+      - name: Run isort (Import sorting)
+        run: |
+          poetry run isort . --check --diff
+
+      - name: Run black (Code formatting)
+        run: |
+          poetry run black . --check
+
+      - name: Run Mypy
+        run: |
+          poetry run mypy .
