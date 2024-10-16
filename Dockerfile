@@ -24,6 +24,10 @@ RUN apt-get update && apt-get install -y \
     libmariadb-dev-compat \
     pkg-config \
     libpq-dev \
+    gdal-bin \
+    libgdal-dev \
+    libgeos-dev \
+    postgis \
     && rm -rf /var/lib/apt/lists/*
 
 # 3. pyenv 설치 및 환경 설정
@@ -58,10 +62,15 @@ RUN /bin/bash -c "source ~/.bashrc && pyenv activate django-main && poetry insta
 # 7. 프로젝트 소스 코드 복사
 COPY . /app
 
-# 8. ENTRYPOINT 설정
+# 8. GeoDjango 관련 라이브러리 경로 설정
+# 필요에 따라 경로가 다를 수 있으므로, 환경에 맞게 조정 필요
+ENV GDAL_LIBRARY_PATH=/usr/lib/libgdal.so
+ENV GEOS_LIBRARY_PATH=/usr/lib/libgeos_c.so
+
+# 9. ENTRYPOINT 설정
 COPY scripts/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
 
-# 9. Gunicorn이 8000 포트에서 수신하도록 EXPOSE
+# 10. Gunicorn이 8000 포트에서 수신하도록 EXPOSE
 EXPOSE 8000
