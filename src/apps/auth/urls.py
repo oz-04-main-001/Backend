@@ -1,9 +1,17 @@
 from django.urls import path
 
-from . import views
 from .views.auth_view import (
     UserRegistrationRequestAPIView,
     UserRegistrationVerifyAPIView,
+    LoginAPIView,
+    CustomTokenRefreshView,
+    LogoutAPIView,
+    UserDeletionRequestAPIView,
+    UserDeletionVerifyAPIView,
+    UserEmailLookupAPIView,
+    PasswordResetRequestAPIView,
+    PasswordResetVerifyOTPAPIView,
+    PasswordResetAPIView,
 )
 
 app_name = "auth"  # 앱 이름 설정
@@ -18,5 +26,42 @@ urlpatterns = [
         "register/verify/",
         UserRegistrationVerifyAPIView.as_view(),
         name="user-register-verify",
+    ),
+    path("login/", LoginAPIView.as_view(), name="login"),
+    path(
+        "token/refresh/",
+        CustomTokenRefreshView.as_view(),
+        name="token_refresh",
+    ),
+    path("logout/", LogoutAPIView.as_view(), name="logout"),
+    path(
+        "delete/request/",
+        UserDeletionRequestAPIView.as_view(),
+        name="user-delete_request",
+    ),
+    path(
+        "delete/verify/",
+        UserDeletionVerifyAPIView.as_view(),
+        name="user-delete_verify",
+    ),
+    path(
+        "email-lookup/",
+        UserEmailLookupAPIView.as_view(),
+        name="password-email_lookup",
+    ),
+    path(
+        "password/reset/request/",
+        PasswordResetRequestAPIView.as_view(),
+        name="password-reset_request",
+    ),
+    path(
+        "password/reset/verify/",
+        PasswordResetVerifyOTPAPIView.as_view(),
+        name="password-reset_verify",
+    ),
+    path(
+        "password/reset/",
+        PasswordResetAPIView.as_view(),
+        name="password-reset",
     ),
 ]

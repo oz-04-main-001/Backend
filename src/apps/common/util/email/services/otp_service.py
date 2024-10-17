@@ -1,11 +1,12 @@
 import random
 import string
-import redis
 from django.conf import settings
 from django.core.mail import send_mail
 
-# Redis 클라이언트 설정
-redis_client = redis.StrictRedis(host="redis", port=6379, db=1)
+from apps.common.util.redis_client import get_redis_client
+
+
+redis_client = get_redis_client()
 
 
 class OTPService:
