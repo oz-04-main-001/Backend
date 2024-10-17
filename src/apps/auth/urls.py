@@ -1,9 +1,22 @@
 from django.urls import path
 
 from . import views
+from .views.auth_view import (
+    UserRegistrationRequestAPIView,
+    UserRegistrationVerifyAPIView,
+)
 
 app_name = "auth"  # 앱 이름 설정
 
 urlpatterns = [
-    # path("", views.home, name="home"),  # 메인 페이지
+    path(
+        "register/request/",
+        UserRegistrationRequestAPIView.as_view(),
+        name="user-register-request",
+    ),
+    path(
+        "register/verify/",
+        UserRegistrationVerifyAPIView.as_view(),
+        name="user-register-verify",
+    ),
 ]

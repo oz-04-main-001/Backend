@@ -1,28 +1,17 @@
 # apps/users/models.py
-from apps.common.choices import (GENDER_CHOICES, SOCIAL_LOGIN_CHOICES,
-                                 USER_TYPE_CHOICES,
-                                 VERIFICATION_STATUS_CHOICES)
-from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
+from typing import Optional
+
+from apps.common.choices import (
+    GENDER_CHOICES,
+    SOCIAL_LOGIN_CHOICES,
+    USER_TYPE_CHOICES,
+    VERIFICATION_STATUS_CHOICES,
+)
+from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 
-
-class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError("The Email field must be set")
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        extra_fields.setdefault("user_type", "admin")
-
-        return self.create_user(email, password, **extra_fields)
+from apps.users.managers.user_manager import UserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -34,7 +23,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     birth_date = models.DateField()
     user_image = models.CharField(max_length=255, blank=True, null=True)
     user_type = models.CharField(
-        max_length=20, choices=USER_TYPE_CHOICES, default="regular"
+        max_length=20, choices=USER_TYPE_CHOICES, default="guest"
     )
     social_id = models.CharField(max_length=100, blank=True, null=True)
     social_login = models.CharField(

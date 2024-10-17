@@ -209,14 +209,13 @@ AUTH_USER_MODEL = "users.User"
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 
 # SMTP 서버 설정 (예: Gmail 사용)
-EMAIL_HOST = "smtp.gmail.com"  # SMTP 서버 주소
+EMAIL_HOST = "smtp.naver.com"  # SMTP 서버 주소
 EMAIL_PORT = 587  # 포트 번호 (Gmail은 587)
 EMAIL_USE_TLS = True  # TLS 사용 여부 (Gmail은 True)
 
 # 이메일 인증 정보
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "your_email@gmail.com")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "your_email_password")
-
 
 # 기본 발신자 이메일 주소
 DEFAULT_FROM_EMAIL = "webmaster@yourdomain.com"  # 발신자 기본 이메일
