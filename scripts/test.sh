@@ -5,15 +5,15 @@ COLOR_GREEN=`tput setaf 2;`
 COLOR_NC=`tput sgr0;` # No Color
 
 echo "Starting black"
-poetry run black .
+poetry run black ../src
 echo "OK"
 
 echo "Starting isort"
-poetry run isort .
+poetry run isort ../src
 echo "OK"
 
 echo "Starting mypy"
-poetry run mypy .
+poetry run mypy ../src
 echo "OK"
 
 echo "Starting test with coverage"

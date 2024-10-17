@@ -13,8 +13,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_HOST=db
-      - GDAL_LIBRARY_PATH=/usr/lib/libgdal.so
-      - GEOS_LIBRARY_PATH=/usr/lib/libgeos_c.so
+
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000"]
       interval: 30s

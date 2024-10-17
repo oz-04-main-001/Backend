@@ -1,14 +1,10 @@
 # apps/users/models.py
-from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
+from apps.common.choices import (GENDER_CHOICES, SOCIAL_LOGIN_CHOICES,
+                                 USER_TYPE_CHOICES,
+                                 VERIFICATION_STATUS_CHOICES)
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
-
-from apps.common.choices import (
-    GENDER_CHOICES,
-    USER_TYPE_CHOICES,
-    SOCIAL_LOGIN_CHOICES,
-    VERIFICATION_STATUS_CHOICES,
-)
 
 
 class UserManager(BaseUserManager):

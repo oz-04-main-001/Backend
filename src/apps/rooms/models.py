@@ -1,7 +1,7 @@
 # apps/rooms/models.py
 
-from django.db import models
 from apps.accommodations.models import Accommodation
+from django.db import models
 
 
 class Room(models.Model):

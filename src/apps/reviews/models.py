@@ -1,9 +1,9 @@
 # apps/reviews/models.py
 
-from django.db import models
-from apps.users.models import User
 from apps.accommodations.models import Accommodation
 from apps.common.choices import RATING_CHOICES
+from apps.users.models import User
+from django.db import models
 
 
 class Review(models.Model):

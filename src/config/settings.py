@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,8 +36,12 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 # GDAL_LIBRARY_PATH = "/opt/homebrew/Cellar/gdal/3.9.3_1/lib/libgdal.dylib"
 # GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
 # GDAL과 GEOS 경로 설정
-GDAL_LIBRARY_PATH = "/usr/lib/aarch64-linux-gnu/libgdal.so"
-GEOS_LIBRARY_PATH = "/usr/lib/aarch64-linux-gnu/libgeos_c.so"
+GDAL_LIBRARY_PATH = os.getenv(
+    "GDAL_LIBRARY_PATH", "/usr/lib/aarch64-linux-gnu/libgdal.so"
+)
+GEOS_LIBRARY_PATH = os.getenv(
+    "GEOS_LIBRARY_PATH", "/usr/lib/aarch64-linux-gnu/libgeos_c.so"
+)
 
 
 # Application definition

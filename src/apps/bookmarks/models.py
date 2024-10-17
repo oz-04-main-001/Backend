@@ -1,8 +1,8 @@
 # apps/bookmarks/models.py
 
-from django.db import models
-from apps.users.models import User
 from apps.accommodations.models import Accommodation
+from apps.users.models import User
+from django.db import models
 
 
 class Bookmark(models.Model):

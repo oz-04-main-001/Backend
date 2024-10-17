@@ -1,9 +1,9 @@
 # apps/bookings/models.py
 
-from django.db import models
-from apps.users.models import User
-from apps.rooms.models import Room
 from apps.common.choices import BOOKING_STATUS_CHOICES
+from apps.rooms.models import Room
+from apps.users.models import User
+from django.db import models
 
 
 class Booking(models.Model):

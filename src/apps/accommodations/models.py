@@ -1,7 +1,7 @@
 # apps/accommodations/models.py
 
-from django.db import models
 from apps.users.models import BusinessUser
+from django.db import models
 
 
 class Accommodation(models.Model):

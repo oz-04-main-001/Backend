@@ -11,12 +11,31 @@ cd src
 echo "Applying database migrations..."
 poetry run python manage.py migrate --no-input
 
+# 슈퍼유저 생성
+echo "Creating superuser..."
+poetry run python manage.py shell << END
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+# 이미 생성된 슈퍼유저가 없는 경우에만 생성
+if not User.objects.filter(email='admin@naver.com').exists():
+    user = User.objects.create_superuser(
+        email='admin@naver.com',
+        password='12345678',  # 원하는 비밀번호로 설정
+        first_name='Hong',
+        last_name='Hong',
+        phone_number='010-1111-2222',
+        birth_date='2024-10-17'
+    )
+    user.save()
+END
+
 # 정적 파일 수집
 echo "Collecting static files..."
 poetry run python manage.py collectstatic --no-input
 
-#!/bin/bash
-
+# GDAL 및 GEOS 설정 및 버전 확인
 echo "GDAL_LIBRARY_PATH is set to: $GDAL_LIBRARY_PATH"
 echo "GEOS_LIBRARY_PATH is set to: $GEOS_LIBRARY_PATH"
 
@@ -36,11 +55,7 @@ find / -name "libgdal.so" || echo "libgdal.so not found."
 echo "Finding libgeos_c.so..."
 find / -name "libgeos_c.so" || echo "libgeos_c.so not found."
 
-# GDAL 및 GEOS 라이브러리 경로 설정
-export GDAL_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu/libgdal.so"
-export GEOS_LIBRARY_PATH="/usr/lib/aarch64-linux-gnu/libgeos_c.so"
 
 # Gunicorn 실행
 echo "Starting Gunicorn..."
 exec poetry run gunicorn config.wsgi:application --bind 0.0.0.0:8000
-
