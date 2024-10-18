@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -69,25 +70,10 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt",  # DRF Simple JWT
     "rest_framework_simplejwt.token_blacklist",  # DRF Simple JWT BlackList
     "drf_spectacular",  # DRF Spectacular (API 문서화)
-    "debug_toolbar",  # Django Debug Toolbar
     "django_filters",  # Django Filter for DRF
 ]
 
 INSTALLED_APPS = OWN_APPS + DJANGO_APPS + THIRD_PARTY_APPS
-
-
-# debug-toolbar
-if DEBUG:
-    import socket  # only if you haven't already imported this
-
-    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
-    INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + [
-        "127.0.0.1",
-        "52.78.188.221",
-    ]
-    DEBUG_TOOLBAR_CONFIG = {
-        "SHOW_TOOLBAR_CALLBACK": lambda request: True,  # 모든 요청에서 툴바를 보이도록 설정
-    }
 
 
 MIDDLEWARE = [
@@ -100,6 +86,26 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+if DEBUG and "test" not in sys.argv:  # 테스트 환경에서 비활성화
+    import socket  # only if you haven't already imported this
+
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + [
+        "127.0.0.1",
+        "52.78.188.221",
+    ]
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": lambda request: True,  # 모든 요청에서 툴바를 보이도록 설정
+    }
+    MIDDLEWARE.insert(0, "debug_toolbar.middleware.DebugToolbarMiddleware")
+    INSTALLED_APPS += ["debug_toolbar"]
+
+else:
+    # 테스트 환경에서 Debug Toolbar 비활성화
+    if "debug_toolbar" in INSTALLED_APPS:
+        INSTALLED_APPS.remove("debug_toolbar")
+    MIDDLEWARE = [mw for mw in MIDDLEWARE if mw != "debug_toolbar.middleware.DebugToolbarMiddleware"]
 
 ROOT_URLCONF = "config.urls"
 
