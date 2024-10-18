@@ -3,8 +3,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
-from rest_framework_simplejwt.views import (TokenObtainPairView,
-                                            TokenRefreshView, TokenVerifyView)
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+)
 
 # 1. 관리자 URL
 admin_urlpatterns = [
@@ -50,14 +53,14 @@ v1_urlpatterns = [
 # 6. 디버그 및 정적 파일 URL (개발 환경에서만)
 debug_urlpatterns = []
 if settings.DEBUG:
-    import debug_toolbar
+    import debug_toolbar  # type: ignore
 
     debug_urlpatterns = (
         [
             path("__debug__/", include(debug_toolbar.urls)),
         ]
         + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+        + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)  # type: ignore
     )
 
 

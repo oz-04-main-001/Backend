@@ -7,18 +7,17 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-
 from apps.auth.serializers.auth_serializer import (
-    UserRegistrationSerializer,
     LoginSerializer,
-    UserEmailLookupSerializer,
     PasswordResetRequestSerializer,
     PasswordResetSerializer,
+    UserEmailLookupSerializer,
+    UserRegistrationSerializer,
 )
 from apps.auth.services.token_service import TokenService
 from apps.common.util.email.serializers.otp_serializer import OTPVerificationSerializer
 from apps.common.util.email.services.otp_service import OTPService
-from apps.users.models import User, WithdrawManager
+from apps.users.models import User, WithdrawManager  # type: ignore
 
 
 class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
@@ -83,9 +82,7 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
                 status=status.HTTP_201_CREATED,
             )
 
-        return Response(
-            {"message": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"message": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginAPIView(GenericAPIView):
@@ -122,9 +119,7 @@ class CustomTokenRefreshView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        new_access_token = self.token_service.refresh_access_token(
-            access_token=access_token
-        )
+        new_access_token = self.token_service.refresh_access_token(access_token=access_token)
 
         return Response(
             {
@@ -143,9 +138,7 @@ class LogoutAPIView(GenericAPIView):
 
         self.token_service.delete_refresh_token(f"refresh_token:{user.id}")
 
-        return Response(
-            {"message": "Successfully logged out."}, status=status.HTTP_200_OK
-        )
+        return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
 
 
 class UserDeletionRequestAPIView(GenericAPIView):
@@ -163,7 +156,7 @@ class UserDeletionRequestAPIView(GenericAPIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        self.otp_service.send_otp_email(user.email)
+        self.otp_service.send_otp_email(user.email)  # type: ignore
 
         request.session["withdraw_reason"] = withdraw_reason
 
@@ -214,9 +207,7 @@ class UserEmailLookupAPIView(GenericAPIView):
         last_name = full_name[0]
         first_name = full_name[1:]
 
-        user = User.objects.get_user_by_phone_and_name(
-            phone_number, first_name, last_name
-        )
+        user = User.objects.get_user_by_phone_and_name(phone_number, first_name, last_name)
 
         if not user:
             return Response(
@@ -254,7 +245,7 @@ class PasswordResetRequestAPIView(GenericAPIView):
         )
 
 
-class PasswordResetVerifyOTPAPIView(GenericAPIView):
+class PasswordResetVerifyAPIView(GenericAPIView):
     serializer_class = OTPVerificationSerializer
     permission_classes = [AllowAny]
     otp_service = OTPService()
@@ -273,15 +264,11 @@ class PasswordResetVerifyOTPAPIView(GenericAPIView):
             )
 
         if not self.otp_service.verify_otp(email, otp):
-            return Response(
-                {"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
         request.session["otp_verified"] = True
 
-        return Response(
-            {"message": "OTP verified successfully."}, status=status.HTTP_200_OK
-        )
+        return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
 
 
 class PasswordResetAPIView(GenericAPIView):
@@ -310,8 +297,8 @@ class PasswordResetAPIView(GenericAPIView):
             )
 
         user: User | None = User.objects.get_user_by_email(email=email)
-        user.set_password(password)
-        user.save()
+        user.set_password(password)  # type: ignore
+        user.save()  # type: ignore
 
         del request.session["reset_email"]
         del request.session["otp_verified"]

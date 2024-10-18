@@ -81,9 +81,7 @@ class Migration(migrations.Migration):
                 ("count_room", models.IntegerField()),
                 (
                     "room",
-                    models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE, to="rooms.room"
-                    ),
+                    models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to="rooms.room"),
                 ),
             ],
         ),
@@ -103,9 +101,7 @@ class Migration(migrations.Migration):
                 ("type_name", models.CharField(max_length=100)),
                 (
                     "room",
-                    models.OneToOneField(
-                        on_delete=django.db.models.deletion.CASCADE, to="rooms.room"
-                    ),
+                    models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to="rooms.room"),
                 ),
             ],
         ),

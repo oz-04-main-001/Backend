@@ -1,9 +1,10 @@
-# apps/reviews/models.py
+# type: ignore
+
+from django.db import models
 
 from apps.accommodations.models import Accommodation
 from apps.common.choices import RATING_CHOICES
 from apps.users.models import User
-from django.db import models
 
 
 class Review(models.Model):

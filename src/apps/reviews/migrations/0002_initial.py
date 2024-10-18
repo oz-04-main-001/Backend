@@ -18,15 +18,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="review",
             name="guest",
-            field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL
-            ),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL),
         ),
         migrations.AddField(
             model_name="rating",
             name="review",
-            field=models.OneToOneField(
-                on_delete=django.db.models.deletion.CASCADE, to="reviews.review"
-            ),
+            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to="reviews.review"),
         ),
     ]

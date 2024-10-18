@@ -1,7 +1,8 @@
-# apps/accommodations/models.py
+# type: ignore
+
+from django.db import models
 
 from apps.users.models import BusinessUser
-from django.db import models
 
 
 class Accommodation(models.Model):
@@ -23,9 +24,7 @@ class AccommodationType(models.Model):
 
 
 class Accommodation_Image(models.Model):
-    accommodation = models.ForeignKey(
-        Accommodation, on_delete=models.CASCADE, related_name="images"
-    )
+    accommodation = models.ForeignKey(Accommodation, on_delete=models.CASCADE, related_name="images")
     image = models.ImageField(upload_to="accommodation_images/")
 
 

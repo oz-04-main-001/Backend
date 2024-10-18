@@ -1,17 +1,17 @@
 from django.urls import path
 
 from .views.auth_view import (
-    UserRegistrationRequestAPIView,
-    UserRegistrationVerifyAPIView,
-    LoginAPIView,
     CustomTokenRefreshView,
+    LoginAPIView,
     LogoutAPIView,
+    PasswordResetAPIView,
+    PasswordResetRequestAPIView,
+    PasswordResetVerifyAPIView,
     UserDeletionRequestAPIView,
     UserDeletionVerifyAPIView,
     UserEmailLookupAPIView,
-    PasswordResetRequestAPIView,
-    PasswordResetVerifyOTPAPIView,
-    PasswordResetAPIView,
+    UserRegistrationRequestAPIView,
+    UserRegistrationVerifyAPIView,
 )
 
 app_name = "auth"  # 앱 이름 설정
@@ -56,7 +56,7 @@ urlpatterns = [
     ),
     path(
         "password/reset/verify/",
-        PasswordResetVerifyOTPAPIView.as_view(),
+        PasswordResetVerifyAPIView.as_view(),
         name="password-reset_verify",
     ),
     path(

@@ -1,12 +1,10 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
-
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer[User]):
+class UserRegistrationSerializer(serializers.ModelSerializer[User]):  # type: ignore
     password2 = serializers.CharField(write_only=True, label="Confirm Password")
 
     class Meta:
@@ -29,19 +27,13 @@ class UserRegistrationSerializer(serializers.ModelSerializer[User]):
         email = data.get("email")
         phone_number = data.get("phone_number")
 
-        existing_user = User.objects.get_user_by_email_or_phone(
-            email=email, phone_number=phone_number
-        )
+        existing_user: User | None = User.objects.get_user_by_email_or_phone(email=email, phone_number=phone_number)  # type: ignore
 
         if existing_user:
             if existing_user.email == email:
-                raise serializers.ValidationError(
-                    {"email": "This email is already registered."}
-                )
+                raise serializers.ValidationError({"email": "This email is already registered."})
             if existing_user.phone_number == phone_number:
-                raise serializers.ValidationError(
-                    {"phone_number": "This phone number is already registered."}
-                )
+                raise serializers.ValidationError({"phone_number": "This phone number is already registered."})
 
         return data
 
@@ -75,12 +67,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetSerializer(serializers.Serializer):
-    password = serializers.CharField(
-        write_only=True, label="New Password", style={"input_type": "password"}
-    )
-    password2 = serializers.CharField(
-        write_only=True, label="Confirm New Password", style={"input_type": "password"}
-    )
+    password = serializers.CharField(write_only=True, label="New Password", style={"input_type": "password"})
+    password2 = serializers.CharField(write_only=True, label="Confirm New Password", style={"input_type": "password"})
 
     def validate(self, data: dict) -> dict:
         password1 = data.get("password1")

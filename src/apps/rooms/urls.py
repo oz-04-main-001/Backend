@@ -4,6 +4,6 @@ from . import views
 
 app_name = "rooms"  # 앱 이름 설정
 
-urlpatterns = [
+urlpatterns: list = [
     # 예: path('', views.RoomListView.as_view(), name='list'),
 ]

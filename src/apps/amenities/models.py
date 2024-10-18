@@ -1,8 +1,9 @@
-# apps/amenities/models.py
+# type: ignore
+
+from django.db import models
 
 from apps.accommodations.models import Accommodation
 from apps.rooms.models import Room
-from django.db import models
 
 
 class Amenity(models.Model):

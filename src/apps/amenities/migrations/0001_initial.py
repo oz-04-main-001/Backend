@@ -110,9 +110,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "room",
-                    models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="rooms.room"
-                    ),
+                    models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to="rooms.room"),
                 ),
             ],
             options={

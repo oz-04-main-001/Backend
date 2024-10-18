@@ -1,8 +1,8 @@
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from django.contrib.auth import get_user_model
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from apps.common.util.redis_client import get_redis_client
-from apps.users.models import User
 
 # Redis 설정
 redis_client = get_redis_client()
@@ -10,9 +10,9 @@ redis_client = get_redis_client()
 
 class TokenService:
 
-    def generate_tokens(self, user: User) -> str:
+    def generate_tokens(self, user: User) -> str:  # type: ignore
 
-        refresh: RefreshToken = RefreshToken.for_user(user)
+        refresh: RefreshToken = RefreshToken.for_user(user)  # type: ignore
         access_token = str(refresh.access_token)
         refresh_token = str(refresh)
 
@@ -34,14 +34,14 @@ class TokenService:
 
     def refresh_access_token(self, access_token: str):
         try:
-            token = AccessToken(access_token)
+            token: AccessToken = AccessToken(access_token)  # type: ignore
             user_id = token["user_id"]
         except Exception:
             raise AuthenticationFailed("Invalid access token.")
 
         stored_refresh_token = self._get_stored_refresh_token(user_id)
 
-        refresh = RefreshToken(stored_refresh_token)
+        refresh: RefreshToken = RefreshToken(stored_refresh_token)  # type: ignore
         new_access_token = str(refresh.access_token)
 
         return new_access_token
