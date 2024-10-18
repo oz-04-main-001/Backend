@@ -3,6 +3,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from apps.common.util.redis_client import get_redis_client
+from apps.users.models import User
 
 # Redis 설정
 redis_client = get_redis_client()

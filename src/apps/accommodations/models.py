@@ -36,3 +36,11 @@ class GPS_Info(models.Model):
     address = models.CharField(max_length=255)
     latitude = models.DecimalField(max_digits=9, decimal_places=6)
     longitude = models.DecimalField(max_digits=9, decimal_places=6)
+
+    def get_coordinates(self):
+        return (self.latitude, self.longitude)
+
+    def set_coordinates(self, lat, lon):
+        self.latitude = lat
+        self.longitude = lon
+        self.save()
