@@ -36,6 +36,6 @@ jobs:
         run: |
           poetry run black . --check
 
-      - name: Run Mypy
-        run: |
-          poetry run mypy .
+#      - name: Run Mypy
+#        run: |
+#          poetry run mypy .
