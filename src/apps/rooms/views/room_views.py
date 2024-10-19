@@ -3,7 +3,7 @@ from django.db import transaction
 from django.db.models import F, Prefetch
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status, filters
+from rest_framework import filters, generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -22,13 +22,13 @@ User = get_user_model()
 
 class AccommodationRoomsView(generics.ListAPIView):
     serializer_class = RoomSerializer
-    permission_classes = [AllowAny]  #[IsAuthenticated]
+    permission_classes = [AllowAny]  # [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['is_available', 'capacity']
-    ordering_fields = ['price', 'created_at']
+    filterset_fields = ["is_available", "capacity"]
+    ordering_fields = ["price", "created_at"]
 
     def get_queryset(self):
-        accommodation_id = self.kwargs['accommodation_id']
+        accommodation_id = self.kwargs["accommodation_id"]
         return Room.objects.filter(accommodation_id=accommodation_id)
 
 
