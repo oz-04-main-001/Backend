@@ -1,6 +1,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/python,pycharm,django,database,dotenv
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,pycharm,django,database,dotenv
-
+.DS_Store
 ### Database ###
 *.accdb
 *.db

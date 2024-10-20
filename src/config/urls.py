@@ -43,6 +43,7 @@ v1_urlpatterns = [
     path("bookmarks/", include("apps.bookmarks.urls")),
     path("host/", include("apps.host_management.urls")),
     path("auth/", include("apps.auth.urls")),
+    path("ui/", include("apps.pages.urls")),
 ]
 
 # 5. WebSocket 관련 URL
