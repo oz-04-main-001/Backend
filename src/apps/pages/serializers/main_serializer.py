@@ -1,7 +1,8 @@
 from typing import Union
 
-from apps.accommodations.models import Accommodation, Accommodation_Image
 from rest_framework import serializers
+
+from apps.accommodations.models import Accommodation, Accommodation_Image
 
 
 class MainPageSerializer(serializers.ModelSerializer):
@@ -22,6 +23,6 @@ class MainPageSerializer(serializers.ModelSerializer):
         # Accommodation과 연결된 Accommodation_image 테이블에서 첫 번째 이미지의 URL을 반환
         img = Accommodation_Image.objects.filter(accommodation_id=obj.pk).first()  # 이미지들중 첫번째 이미지
         if img:  # img가 있다면
-            return (img.image.name)  # 이객체의 image필드의 값을 반환(클라우드 url주소 예정)
+            return img.image.name  # 이객체의 image필드의 값을 반환(클라우드 url주소 예정)
 
         return None  # img가 없다면 None 반환

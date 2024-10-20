@@ -4,6 +4,6 @@ from apps.pages.serializers.room_serializer import RoomSerializer
 from apps.rooms.models import Room
 
 
-class RoomDetailView(RetrieveAPIView) :
+class RoomDetailView(RetrieveAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer

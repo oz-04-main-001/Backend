@@ -8,5 +8,5 @@ class BookingRequestView(RetrieveAPIView):
     serializer_class = BookingRequestSerializer
 
     def get_queryset(self):
-        hotel_pk = self.kwargs['hotel_pk']
-        return Room.objects.filter(accommodation__id = hotel_pk)
+        hotel_pk = self.kwargs["hotel_pk"]
+        return Room.objects.filter(accommodation__id=hotel_pk)
