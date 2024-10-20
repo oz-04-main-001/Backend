@@ -10,7 +10,7 @@ redis_client = get_redis_client()
 
 class TokenService:
 
-    def generate_tokens(self, user: User) -> str:  # type: ignore
+    def generate_tokens(self, user: "User") -> str:  # type: ignore
 
         refresh: RefreshToken = RefreshToken.for_user(user)  # type: ignore
         access_token = str(refresh.access_token)
