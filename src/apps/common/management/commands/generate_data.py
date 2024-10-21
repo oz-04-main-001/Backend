@@ -1,21 +1,22 @@
-from django.core.management.base import BaseCommand
-from faker import Faker
 import random
 
+from django.core.management.base import BaseCommand
+from faker import Faker
+
+from apps.accommodations.models import Accommodation, AccommodationType, GPS_Info
+from apps.amenities.models import AccommodationAmenity, Amenity, Option, RoomOption
 from apps.common.choices import (
-    GENDER_CHOICES,
-    USER_TYPE_CHOICES,
-    SOCIAL_LOGIN_CHOICES,
-    VERIFICATION_STATUS_CHOICES,
-    AMENITY_CHOICES_BY_CATEGORY,
     AMENITY_CATEGORIES_CHOICES,
+    AMENITY_CHOICES_BY_CATEGORY,
+    GENDER_CHOICES,
     OPTION_CATEGORIES_CHOICES,
     OPTION_CHOICES_BY_CATEGORY,
+    SOCIAL_LOGIN_CHOICES,
+    USER_TYPE_CHOICES,
+    VERIFICATION_STATUS_CHOICES,
 )
-from apps.users.models import User, BusinessUser
-from apps.accommodations.models import Accommodation, AccommodationType, GPS_Info
-from apps.rooms.models import Room, RoomType, RoomInventory
-from apps.amenities.models import Amenity, AccommodationAmenity, Option, RoomOption
+from apps.rooms.models import Room, RoomInventory, RoomType
+from apps.users.models import BusinessUser, User
 
 
 class Command(BaseCommand):
