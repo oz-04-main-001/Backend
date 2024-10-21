@@ -30,18 +30,8 @@ class GPSInfoSerializer(serializers.ModelSerializer):
             "states",
             "road_name",
             "address",
-            "latitude",
-            "longitude",
-            "coordinates",
+            "location",
         ]
-
-    def get_coordinates(self, obj):
-        return {"lat": obj.latitude, "lon": obj.longitude}
-
-    def to_representation(self, instance):
-        ret = super().to_representation(instance)
-        ret["coordinates"] = self.get_coordinates(instance)
-        return ret
 
 
 class AccommodationSerializer(serializers.ModelSerializer):

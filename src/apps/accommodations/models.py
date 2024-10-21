@@ -1,5 +1,7 @@
 # type: ignore
 
+from django.contrib.gis.db import models as gis_models
+from django.contrib.gis.geos import Point
 from django.db import models
 
 from apps.users.models import BusinessUser
@@ -28,19 +30,10 @@ class Accommodation_Image(models.Model):
     image = models.ImageField(upload_to="accommodation_images/")
 
 
-class GPS_Info(models.Model):
+class GPS_Info(gis_models.Model):
     accommodation = models.OneToOneField(Accommodation, on_delete=models.CASCADE)
     city = models.CharField(max_length=100)
     states = models.CharField(max_length=100)
     road_name = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
-
-    def get_coordinates(self):
-        return (self.latitude, self.longitude)
-
-    def set_coordinates(self, lat, lon):
-        self.latitude = lat
-        self.longitude = lon
-        self.save()
+    location = gis_models.PointField(geography=True, srid=4326, default=Point(0.0, 0.0))  # 기본값 설정

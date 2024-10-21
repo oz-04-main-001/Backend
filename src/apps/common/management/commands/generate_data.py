@@ -1,5 +1,6 @@
 import random
 
+from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 from faker import Faker
 
@@ -111,8 +112,7 @@ class Command(BaseCommand):
                 states=fake.state(),
                 road_name=fake.street_name(),
                 address=fake.address(),
-                latitude=fake.latitude(),
-                longitude=fake.longitude(),
+                location=Point(float(fake.longitude()), float(fake.latitude())),
             )
             print(f"Accommodation created: {accommodation.name} with phone number {accommodation.phone_number}")
 
