@@ -1,9 +1,10 @@
 from django.urls import path
 
-from . import views
-
+from apps.bookings.views import booking_guest_view
 app_name = "bookings"  # 앱 이름 설정
 
 urlpatterns: list = [
-    # 예: path('', views.BookingListView.as_view(), name='list'),
+    path("request/<int:acoommodation_id>/<int:pk>",booking_guest_view.BookingRequestCreateView.as_view(), name="booking_request" ),
+    path("cancel/<int:pk>/",booking_guest_view.BookingCancelView.as_view(), name="booking_cancel" ),
+
 ]
