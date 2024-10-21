@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.bookings.models import Booking
-from apps.host_management.serializers import BookingSerializer
+from apps.host_management.serializers.host_booking import BookingSerializer
 
 
 class BookingListView(generics.GenericAPIView):
