@@ -31,6 +31,20 @@ if not User.objects.filter(email='admin@naver.com').exists():
     user.save()
 END
 
+# Accommodation 모델에 데이터가 없을 경우에만 더미 데이터 생성
+echo "Checking if dummy data needs to be generated..."
+poetry run python manage.py shell << END
+from apps.accommodations.models import Accommodation
+
+# Accommodation 데이터가 없는 경우에만 더미 데이터 생성
+if not Accommodation.objects.exists():
+    print("No data found. Generating fake data...")
+    from django.core.management import call_command
+    call_command('generate_data')
+else:
+    print("Data already exists. Skipping data generation.")
+END
+
 # 정적 파일 수집
 echo "Collecting static files..."
 poetry run python manage.py collectstatic --no-input
