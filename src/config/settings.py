@@ -65,6 +65,7 @@ DJANGO_APPS = [
 ]
 
 THIRD_PARTY_APPS = [
+    "corsheaders",
     "channels",  # Django Channels
     "django_apscheduler",  # APScheduler
     "rest_framework",  # Django Rest Framework
@@ -78,6 +79,7 @@ INSTALLED_APPS = OWN_APPS + DJANGO_APPS + THIRD_PARTY_APPS
 
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -87,6 +89,23 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "https://localhost:3000",
+    "https://localhost:5173",
+    "http://localhost:8000",
+    "https://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "https://127.0.0.1:3000",
+    "https://127.0.0.1:5173",
+    "http://127.0.0.1:8000",
+    "https://127.0.0.1:8000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 if DEBUG and "test" not in sys.argv:  # 테스트 환경에서 비활성화
     import socket  # only if you haven't already imported this
