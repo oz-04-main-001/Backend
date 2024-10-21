@@ -1,10 +1,10 @@
 # type: ignore
 
+from django.contrib.gis.db import models as gis_models
+from django.contrib.gis.geos import Point
 from django.db import models
 
 from apps.users.models import BusinessUser
-from django.contrib.gis.db import models as gis_models
-from django.contrib.gis.geos import Point
 
 
 class Accommodation(models.Model):

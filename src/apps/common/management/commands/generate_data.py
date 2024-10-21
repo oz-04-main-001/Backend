@@ -1,8 +1,8 @@
 import random
 
+from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 from faker import Faker
-from django.contrib.gis.geos import Point
 
 from apps.accommodations.models import Accommodation, AccommodationType, GPS_Info
 from apps.amenities.models import AccommodationAmenity, Amenity, Option, RoomOption
