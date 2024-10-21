@@ -1,13 +1,10 @@
 from datetime import date
-
 from rest_framework import status
 from rest_framework.test import APITestCase
-
-from apps.accommodations.models import Accommodation
+from django.contrib.auth.models import User
 from apps.bookings.models import Booking
+from apps.accommodations.models import Accommodation
 from apps.rooms.models import Room
-from apps.users.models import User
-
 
 class BookingListViewTest(APITestCase):
     def setUp(self):
@@ -36,18 +33,19 @@ class BookingListViewTest(APITestCase):
         self.booking = Booking.objects.create(
             guest=self.user,
             room=self.room,
-            accommodation=self.accommodation,
             check_in_date=date(2024, 10, 20),
             check_out_date=date(2024, 10, 22),
-            status="pending"
+            total_price=300,
+            status="pending",
+            request="Late check-in requested."
         )
 
     def test_get_booking_list_valid_date_in_range(self):
-        # Given: 유효한 날짜와 room_id, host_id가 주어졌을 때 (날짜가 예약 기간 내에 있음)
+        # Given: 유효한 날짜와 room_id, guest_id가 주어졌을 때 (날짜가 예약 기간 내에 있음)
         selected_date = "2024-10-21"
         room_id = self.room.id
-        host_id = self.user.id
-        url = f"/bookings/?date={selected_date}&room_id={room_id}&host_id={host_id}"
+        guest_id = self.user.id
+        url = f"/bookings/?date={selected_date}&room_id={room_id}&guest_id={guest_id}"
 
         # When: GET 요청을 보낼 때
         response = self.client.get(url)
@@ -58,11 +56,11 @@ class BookingListViewTest(APITestCase):
         self.assertEqual(response.data[0]["status"], "pending")
 
     def test_get_booking_list_date_out_of_range(self):
-        # Given: 유효한 날짜와 room_id, host_id가 주어졌을 때 (날짜가 예약 기간에 포함되지 않음)
+        # Given: 유효한 날짜와 room_id, guest_id가 주어졌을 때 (날짜가 예약 기간에 포함되지 않음)
         selected_date = "2024-10-25"
         room_id = self.room.id
-        host_id = self.user.id
-        url = f"/bookings/?date={selected_date}&room_id={room_id}&host_id={host_id}"
+        guest_id = self.user.id
+        url = f"/bookings/?date={selected_date}&room_id={room_id}&guest_id={guest_id}"
 
         # When: GET 요청을 보낼 때
         response = self.client.get(url)
@@ -72,10 +70,10 @@ class BookingListViewTest(APITestCase):
         self.assertEqual(len(response.data), 0)
 
     def test_get_booking_list_missing_date(self):
-        # Given: 날짜가 없고 room_id와 host_id만 주어졌을 때
+        # Given: 날짜가 없고 room_id와 guest_id만 주어졌을 때
         room_id = self.room.id
-        host_id = self.user.id
-        url = f"/bookings/?room_id={room_id}&host_id={host_id}"
+        guest_id = self.user.id
+        url = f"/bookings/?room_id={room_id}&guest_id={guest_id}"
 
         # When: GET 요청을 보낼 때
         response = self.client.get(url)
@@ -88,8 +86,8 @@ class BookingListViewTest(APITestCase):
         # Given: 유효하지 않은 날짜 형식이 주어졌을 때
         selected_date = "invalid-date"
         room_id = self.room.id
-        host_id = self.user.id
-        url = f"/bookings/?date={selected_date}&room_id={room_id}&host_id={host_id}"
+        guest_id = self.user.id
+        url = f"/bookings/?date={selected_date}&room_id={room_id}&guest_id={guest_id}"
 
         # When: GET 요청을 보낼 때
         response = self.client.get(url)
@@ -124,10 +122,11 @@ class BookingRequestCheckViewTest(APITestCase):
         self.booking = Booking.objects.create(
             guest=self.user,
             room=self.room,
-            accommodation=self.accommodation,
             check_in_date=date(2024, 10, 20),
             check_out_date=date(2024, 10, 22),
-            status="pending"
+            total_price=300,
+            status="pending",
+            request="Late check-in requested."
         )
 
     def test_patch_booking_accept(self):
@@ -142,7 +141,6 @@ class BookingRequestCheckViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, "confirmed")
-        # 추가: 예약 수락 이후 알림 확인 로직 추가 가능
 
     def test_patch_booking_reject(self):
         # Given: 예약이 존재하고 거절 요청이 주어졌을 때
@@ -156,20 +154,19 @@ class BookingRequestCheckViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.booking.refresh_from_db()
         self.assertEqual(self.booking.status, "rejected")
-        # 추가: 예약 거절 이후 후속 작업(예: 취소 알림) 확인 로직 추가 가능
 
     def test_patch_booking_use_complete(self):
         # Given: 예약이 존재하고 사용 완료 요청이 주어졌을 때
         url = f"/bookings/{self.booking.id}/action/"
-        data = {"action": "Use complete"}
+        data = {"action": "use_complete"}
 
         # When: PATCH 요청을 보낼 때
         response = self.client.patch(url, data)
 
-        # Then: 예약 상태가 "Use complete"로 변경되고 상태 코드가 200이어야 함
+        # Then: 예약 상태가 "use_complete"로 변경되고 상태 코드가 200이어야 함
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.booking.refresh_from_db()
-        self.assertEqual(self.booking.status, "Use complete")
+        self.assertEqual(self.booking.status, "use_complete")
 
     def test_patch_booking_invalid_action(self):
         # Given: 예약이 존재하고 잘못된 action 요청이 주어졌을 때
@@ -182,6 +179,14 @@ class BookingRequestCheckViewTest(APITestCase):
         # Then: 오류 메시지가 반환되고 상태 코드가 400이어야 함
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data["detail"], "Invalid action")
+
+        # 추가 테스트: 잘못된 액션의 다양한 예시 확인
+        invalid_actions = ["", "123", "!@#", "none"]
+        for invalid_action in invalid_actions:
+            data = {"action": invalid_action}
+            response = self.client.patch(url, data)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertEqual(response.data["detail"], "Invalid action")
 
     def test_patch_booking_canceled(self):
         # Given: 예약이 존재하고 취소 요청이 주어졌을 때
