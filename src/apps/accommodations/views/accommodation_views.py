@@ -4,6 +4,7 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.contrib.gis.geos import Point
 
 from apps.users.models import BusinessUser
 
@@ -51,8 +52,7 @@ class AccommodationListCreateView(generics.ListCreateAPIView):
         if not gps_info_data:
             GPS_Info.objects.create(
                 accommodation=accommodation,
-                latitude=37.5665,  # 서울의 위도
-                longitude=126.9780,  # 서울의 경도
+                location=Point(126.9780, 37.5665),  # 경도, 위도 순서 (서울 좌표)
                 city="Default City",
                 states="Default State",
                 road_name="Default Road",
