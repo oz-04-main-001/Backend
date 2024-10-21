@@ -47,13 +47,19 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("user_type", "admin")
 
+        first_name = extra_fields.pop("first_name", "Admin")
+        last_name = extra_fields.pop("last_name", "User")
+        phone_number = extra_fields.pop("phone_number", "")
+        gender = extra_fields.pop("gender", "other")
+        birth_date = extra_fields.pop("birth_date", "1900-01-01")
+
         return self.create_user(
             email=email,
-            first_name=extra_fields.get("first_name", "Admin"),
-            last_name=extra_fields.get("last_name", "User"),
-            phone_number=extra_fields.get("phone_number", ""),
-            gender=extra_fields.get("gender", "other"),
-            birth_date=extra_fields.get("birth_date", "1900-01-01"),
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=phone_number,
+            gender=gender,
+            birth_date=birth_date,
             password=password,
             **extra_fields,
         )

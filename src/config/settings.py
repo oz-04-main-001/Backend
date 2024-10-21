@@ -51,6 +51,7 @@ OWN_APPS = [
     "apps.reviews",
     "apps.amenities",
     "apps.bookmarks",
+    "apps.common",
 ]
 
 DJANGO_APPS = [
