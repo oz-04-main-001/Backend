@@ -21,9 +21,6 @@ class UserManager(BaseUserManager):
         password: str | None = None,
         **extra_fields,
     ):
-        if not email:
-            raise ValueError("The Email field must be set")
-
         email = self.normalize_email(email)
 
         user = self.model(
@@ -87,8 +84,8 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def get_user_by_phone_and_name(self, phone_number: str, first_name: str, last_name: str) -> "User | None":
+    def get_user_by_phone(self, phone_number: str) -> "User | None":
         try:
-            return self.get(first_name=first_name, last_name=last_name, phone_number=phone_number)
+            return self.get(phone_number=phone_number)
         except ObjectDoesNotExist:
             return None

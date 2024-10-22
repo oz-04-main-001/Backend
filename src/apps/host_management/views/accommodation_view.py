@@ -4,11 +4,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from apps.accommodations.models import Accommodation
 from apps.accommodations.serializers.accommodation_serializer import (
     AccommodationSerializer,
 )
-
-from ..models.accommodation_model import Accommodation
 
 
 @extend_schema(tags=["Host"])

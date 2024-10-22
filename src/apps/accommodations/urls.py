@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import accommodation_views as views
+from apps.accommodations.views import accommodation_views as views
 
 app_name = "accommodations"
 

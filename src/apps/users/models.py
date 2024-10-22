@@ -1,7 +1,6 @@
 # type: ignore
 from typing import Optional
 
-import django.core.management
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
@@ -63,5 +62,5 @@ class BusinessUser(models.Model):
 
 class WithdrawManager(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    withdraw_date = models.DateTimeField()
+    withdraw_date = models.DateTimeField(auto_now_add=True)
     withdraw_reason = models.TextField(null=True, blank=True)

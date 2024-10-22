@@ -3,6 +3,7 @@ import string
 
 from django.conf import settings
 from django.core.mail import send_mail
+from rest_framework.exceptions import ValidationError
 
 from apps.common.util.redis_client import get_redis_client
 
@@ -35,9 +36,14 @@ class OTPService:
         email = to_email if isinstance(to_email, list) else [to_email]
         send_mail(subject, message, settings.EMAIL_HOST_USER, email)
 
-    def verify_otp(self, email: str, otp: str) -> bool:
+    def verify_otp(self, email: str, otp: str) -> None:
+        """OTP의 유효성을 검증하고, 유효하지 않으면 예외 발생"""
         stored_otp = self.get_otp_from_redis(email)
-        if stored_otp and stored_otp.decode() == otp:
-            self.delete_otp_from_redis(email)
-            return True
-        return False
+        if not stored_otp or stored_otp.decode() != otp:
+            raise ValidationError("Invalid or expired OTP.")
+        self.delete_otp_from_redis(email)
+
+    def validate_otp_verified_in_session(self, otp_verified: bool) -> None:
+        """OTP 검증 상태 확인"""
+        if not otp_verified:
+            raise ValidationError("OTP verification required.")
