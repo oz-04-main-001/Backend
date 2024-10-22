@@ -8,7 +8,7 @@ from apps.accommodations.serializers.accommodation_serializer import (
     AccommodationSerializer,
 )
 
-from ..models.accommodation_model import Accommodation
+from apps.accommodations.models import Accommodation
 
 
 @extend_schema(tags=["Host"])

@@ -23,6 +23,7 @@ from apps.users.models import BusinessUser, User
 class Command(BaseCommand):
     help = "Generate fake data for all models"
 
+    # Bulk create 해야된다
     def handle(self, *args, **kwargs):
         fake = Faker()
 
@@ -46,7 +47,7 @@ class Command(BaseCommand):
     def generate_users(self, fake):
         print("Generating Users...")
 
-        for _ in range(100):  # 유저 10명 생성
+        for _ in range(100):
             user = User.objects.create(
                 first_name=fake.first_name(),
                 last_name=fake.last_name(),

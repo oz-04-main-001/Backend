@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 
@@ -19,6 +21,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer[User]):  # type: ig
             "gender",
             "phone_number",
         ]
+
+    def validate_phone_number(self, value: str) -> str:
+        phone_regex = re.compile(r"^010-\d{4}-\d{4}$")
+
+        if not phone_regex.match(value):
+            raise serializers.ValidationError("Phone number must be in the format 010-1234-5678.")
+
+        return value
 
     def validate(self, data: dict) -> dict:
         if data.get("password") != data.get("password2"):
@@ -61,6 +71,14 @@ class UserEmailLookupSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
     full_name = serializers.CharField()
 
+    def validate_phone_number(self, value: str) -> str:
+        phone_regex = re.compile(r"^010-\d{4}-\d{4}$")
+
+        if not phone_regex.match(value):
+            raise serializers.ValidationError("Phone number must be in the format 010-1234-5678.")
+
+        return value
+
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -71,7 +89,7 @@ class PasswordResetSerializer(serializers.Serializer):
     password2 = serializers.CharField(write_only=True, label="Confirm New Password", style={"input_type": "password"})
 
     def validate(self, data: dict) -> dict:
-        password1 = data.get("password1")
+        password1 = data.get("password")
         password2 = data.get("password2")
 
         if password1 != password2:
