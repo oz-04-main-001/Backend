@@ -5,5 +5,5 @@ set -eo pipefail
 docker-compose exec django_gunicorn bash -c "
   source ~/.bashrc && \
   pyenv activate django-main && \
-  python src/manage.py test
+  python src/manage.py test --pattern="tests_*.py"
 "

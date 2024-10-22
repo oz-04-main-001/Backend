@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING, Any, Optional
-
 from django.contrib.auth.base_user import BaseUserManager
-from django.core.exceptions import ObjectDoesNotExist
 
 from apps.users.conditions.user_get_condtions import email_or_phone_condition
 
@@ -64,31 +62,22 @@ class UserManager(BaseUserManager):
             **extra_fields,
         )
 
-    def get_user_by_email_or_phone(self, email: str, phone_number: str) -> "User | None":
+    def get_user_by_email_or_phone(self, email: str, phone_number: str) -> "User":
         return self.filter(email_or_phone_condition(email=email, phone_number=phone_number)).first()
 
     def email_exists(self, email: str) -> bool:
         return self.filter(email=email).exists()
 
-    def get_user_by_email(self, email: str) -> "User | None":
-        try:
-            return self.get(email=email)
-        except ObjectDoesNotExist:
-            return None
+    def get_user_by_email(self, email: str) -> "User":
+        return self.get(email=email)
 
-    def get_user_by_id(self, id: int) -> "User | None":
-        try:
-            return self.get(id=id)
-        except ObjectDoesNotExist:
-            return None
+    def get_user_by_id(self, id: int) -> "User":
+        return self.get(id=id)
 
     def deactivate_user(self, user) -> "User":
         user.is_active = False
         user.save(using=self._db)
         return user
 
-    def get_user_by_phone_and_name(self, phone_number: str, first_name: str, last_name: str) -> "User | None":
-        try:
-            return self.get(first_name=first_name, last_name=last_name, phone_number=phone_number)
-        except ObjectDoesNotExist:
-            return None
+    def get_user_by_phone_and_name(self, phone_number: str, first_name: str, last_name: str) -> "User":
+        return self.get(first_name=first_name, last_name=last_name, phone_number=phone_number)
