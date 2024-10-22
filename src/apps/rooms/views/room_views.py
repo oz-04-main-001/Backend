@@ -3,6 +3,7 @@ from django.db import transaction
 from django.db.models import F, Prefetch
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -20,6 +21,7 @@ from ..serializers.room_serializer import (
 User = get_user_model()
 
 
+@extend_schema(tags=["Host"])
 class AccommodationRoomsView(generics.ListAPIView):
     serializer_class = RoomSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
@@ -32,6 +34,7 @@ class AccommodationRoomsView(generics.ListAPIView):
         return Room.objects.filter(accommodation_id=accommodation_id)
 
 
+@extend_schema(tags=["Host"])
 class RoomListCreateView(generics.ListCreateAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
@@ -68,6 +71,7 @@ class RoomListCreateView(generics.ListCreateAPIView):
         RoomInventory.objects.filter(room=room).update(count_room=F("count_room") + 1)
 
 
+@extend_schema(tags=["Host"])
 class RoomDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
@@ -83,6 +87,7 @@ class RoomDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.delete()
 
 
+@extend_schema(tags=["Host"])
 class RoomImageCreateView(generics.CreateAPIView):
     serializer_class = RoomImageSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
@@ -92,6 +97,7 @@ class RoomImageCreateView(generics.CreateAPIView):
         serializer.save(room=room)
 
 
+@extend_schema(tags=["Host"])
 class RoomTypeListCreateView(generics.ListCreateAPIView):
     serializer_class = RoomTypeSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
@@ -102,6 +108,7 @@ class RoomTypeListCreateView(generics.ListCreateAPIView):
         )
 
 
+@extend_schema(tags=["Host"])
 class RoomTypeCustomCreateView(generics.CreateAPIView):
     serializer_class = RoomTypeSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
@@ -110,6 +117,7 @@ class RoomTypeCustomCreateView(generics.CreateAPIView):
         serializer.save(is_customized=True)
 
 
+@extend_schema(tags=["Host"])
 class RoomInventoryUpdateView(generics.UpdateAPIView):
     queryset = RoomInventory.objects.all()
     serializer_class = RoomInventorySerializer

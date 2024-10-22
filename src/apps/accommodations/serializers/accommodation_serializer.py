@@ -21,7 +21,6 @@ class AccommodationImageSerializer(serializers.ModelSerializer):
 
 
 class GPSInfoSerializer(serializers.ModelSerializer):
-    coordinates = serializers.SerializerMethodField()
 
     class Meta:
         model = GPS_Info

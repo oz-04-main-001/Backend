@@ -1,5 +1,6 @@
 from typing import Any
 
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -20,6 +21,7 @@ from apps.common.util.email.services.otp_service import OTPService
 from apps.users.models import User, WithdrawManager  # type: ignore
 
 
+@extend_schema(tags=["User"])
 class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
@@ -42,6 +44,7 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
         )
 
 
+@extend_schema(tags=["User"])
 class UserRegistrationVerifyAPIView(GenericAPIView):
     permission_classes = [AllowAny]
     serializer_class = OTPVerificationSerializer
@@ -85,6 +88,7 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
         return Response({"message": "Invalid or expired OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(tags=["User"])
 class LoginAPIView(GenericAPIView):
     serializer_class = LoginSerializer
     permission_classes = [AllowAny]
@@ -106,6 +110,7 @@ class LoginAPIView(GenericAPIView):
         )
 
 
+@extend_schema(tags=["User"])
 class CustomTokenRefreshView(APIView):
     permission_classes = [AllowAny]
     token_service = TokenService()
@@ -129,6 +134,7 @@ class CustomTokenRefreshView(APIView):
         )
 
 
+@extend_schema(tags=["User"])
 class LogoutAPIView(GenericAPIView):
     permission_classes = [IsAuthenticated]
     token_service = TokenService()
@@ -141,6 +147,7 @@ class LogoutAPIView(GenericAPIView):
         return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
 
 
+@extend_schema(tags=["User"])
 class UserDeletionRequestAPIView(GenericAPIView):
     permission_classes = [IsAuthenticated]
     otp_service = OTPService()
@@ -166,6 +173,7 @@ class UserDeletionRequestAPIView(GenericAPIView):
         )
 
 
+@extend_schema(tags=["User"])
 class UserDeletionVerifyAPIView(GenericAPIView):
     serializer_class = OTPVerificationSerializer
     permission_classes = [IsAuthenticated]
@@ -193,6 +201,7 @@ class UserDeletionVerifyAPIView(GenericAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(tags=["User"])
 class UserEmailLookupAPIView(GenericAPIView):
     serializer_class = UserEmailLookupSerializer
     permission_classes = [AllowAny]
@@ -218,6 +227,7 @@ class UserEmailLookupAPIView(GenericAPIView):
         return Response({"email": user.email}, status=status.HTTP_200_OK)
 
 
+@extend_schema(tags=["User"])
 class PasswordResetRequestAPIView(GenericAPIView):
     serializer_class = PasswordResetRequestSerializer
     permission_classes = [AllowAny]
@@ -245,6 +255,7 @@ class PasswordResetRequestAPIView(GenericAPIView):
         )
 
 
+@extend_schema(tags=["User"])
 class PasswordResetVerifyAPIView(GenericAPIView):
     serializer_class = OTPVerificationSerializer
     permission_classes = [AllowAny]
@@ -271,6 +282,7 @@ class PasswordResetVerifyAPIView(GenericAPIView):
         return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
 
 
+@extend_schema(tags=["User"])
 class PasswordResetAPIView(GenericAPIView):
     serializer_class = PasswordResetSerializer
     permission_classes = [AllowAny]

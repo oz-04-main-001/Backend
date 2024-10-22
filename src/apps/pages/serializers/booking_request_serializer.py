@@ -1,5 +1,9 @@
+from datetime import datetime
+from typing import Optional
+
 from rest_framework import serializers
 
+from apps.pages.services.booking_total_price_service import BookingTotalPriceService
 from apps.rooms.models import Room
 
 # 피그마 17-숙박요청
@@ -12,17 +16,58 @@ from apps.rooms.models import Room
 
 class BookingRequestSerializer(serializers.ModelSerializer):
     accommodation_name = serializers.SerializerMethodField()
-    room_price = serializers.SerializerMethodField()
+    total_price = serializers.SerializerMethodField()
+    check_in_date = serializers.SerializerMethodField()
+    check_out_date = serializers.SerializerMethodField()
+    # personnel = serializers.SerializerMethodField()
 
     # bed_count =
     # room_count =
     class Meta:
         model = Room
-        fields = ["accommodation_name", "name", "capacity", "check_in_time", "check_out_time", "room_price"]
+        fields = [
+            "accommodation_name",
+            "check_in_date",
+            "check_out_date",
+            "name",
+            "capacity",
+            "check_in_time",
+            "check_out_time",
+            "total_price",
+        ]
 
-    def get_accommodation_name(self, obj):
+    def get_accommodation_name(self, obj: Room) -> str:
         accommodation = obj.accommodation
         return accommodation.name
 
-    def get_room_price(self, obj):
-        return obj.price
+    def get_total_price(self, obj: Room) -> Optional[int]:
+        # 프론트에서 체크인,체크아웃날자를 받아옴
+        request = self.context.get("request")
+        check_in_date = request.query_params.get("check_in_date")
+        check_out_date = request.query_params.get("check_out_date")
+        day_price = obj.price
+
+        if check_in_date and check_out_date:
+            price_service = BookingTotalPriceService(day_price, check_in_date, check_out_date)
+            total_price = price_service.calculate_price()
+            return total_price
+
+        return None
+
+    def get_check_in_date(self, obj: Room) -> Optional[datetime]:
+        request = self.context.get("request")
+        check_in_date = request.query_params.get("check_in_date", None)
+        if check_in_date:
+            return check_in_date
+        return None
+
+    def get_check_out_date(self, obj: Room) -> Optional[datetime]:
+        request = self.context.get("request")
+        check_out_date = request.query_params.get("check_out_date", None)
+        if check_out_date:
+            return check_out_date
+        return None
+
+    # def get_personnel(self, obj: Room) -> int:
+    #     request = self.context.get("request")
+    #     personnel = request.query_params.get("personnel")
