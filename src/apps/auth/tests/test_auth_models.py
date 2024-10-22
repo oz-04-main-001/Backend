@@ -1,6 +1,7 @@
-from django.test import TestCase
-from apps.users.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.test import TestCase
+
+from apps.users.models import User
 
 
 class UserManagerTest(TestCase):

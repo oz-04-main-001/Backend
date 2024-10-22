@@ -1,12 +1,13 @@
-from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.test import TestCase
 from rest_framework.exceptions import ValidationError
+
 from apps.auth.serializers.auth_serializer import (
-    UserRegistrationSerializer,
     LoginSerializer,
-    UserEmailLookupSerializer,
     PasswordResetRequestSerializer,
     PasswordResetSerializer,
+    UserEmailLookupSerializer,
+    UserRegistrationSerializer,
 )
 
 User = get_user_model()

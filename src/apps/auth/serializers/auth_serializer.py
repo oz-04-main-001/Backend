@@ -3,6 +3,8 @@ import re
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 
+from apps.auth.services.auth_service import UserAuthService
+
 User = get_user_model()
 
 
@@ -71,6 +73,8 @@ class UserEmailLookupSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
     full_name = serializers.CharField()
 
+    user_auth_service = UserAuthService()
+
     def validate_phone_number(self, value: str) -> str:
         phone_regex = re.compile(r"^010-\d{4}-\d{4}$")
 
@@ -79,9 +83,32 @@ class UserEmailLookupSerializer(serializers.Serializer):
 
         return value
 
+    def validate(self, data: dict) -> dict:
+        phone_number = data.get("phone_number")
+        full_name = data.get("full_name")
+
+        last_name = full_name[0]
+        first_name = full_name[1:]
+
+        user = self.user_auth_service.find_user_by_phone_and_name(phone_number, first_name, last_name)
+
+        if not user:
+            raise serializers.ValidationError("No user found with this phone number and full name.")
+
+        data["user"] = user
+        return data
+
 
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+    def validate_email(self, value: str) -> str:
+        user_service = UserAuthService()
+
+        if not user_service.check_if_email_exists(value):
+            raise serializers.ValidationError("No user is associated with this email.")
+
+        return value
 
 
 class PasswordResetSerializer(serializers.Serializer):

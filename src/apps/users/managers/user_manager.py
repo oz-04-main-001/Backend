@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Any, Optional
+
 from django.contrib.auth.base_user import BaseUserManager
 
 from apps.users.conditions.user_get_condtions import email_or_phone_condition
