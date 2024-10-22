@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -19,6 +20,7 @@ from ..serializers.accommodation_serializer import (
 User = get_user_model()
 
 
+@extend_schema(tags=["Host"])
 class AccommodationListCreateView(generics.ListCreateAPIView):
     queryset = Accommodation.objects.all()
     serializer_class = AccommodationSerializer
@@ -74,24 +76,28 @@ class AccommodationListCreateView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
+@extend_schema(tags=["Host"])
 class AccommodationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Accommodation.objects.all()
     serializer_class = AccommodationSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
 
 
+@extend_schema(tags=["Host"])
 class AccommodationTypeListCreateView(generics.ListCreateAPIView):
     queryset = AccommodationType.objects.all()
     serializer_class = AccommodationTypeSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
 
 
+@extend_schema(tags=["Host"])
 class AccommodationTypeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = AccommodationType.objects.all()
     serializer_class = AccommodationTypeSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
 
 
+@extend_schema(tags=["Host"])
 class AccommodationTypeCustomCreateView(APIView):
     permission_classes = [AllowAny]  # [IsAuthenticated]
 
@@ -103,18 +109,21 @@ class AccommodationTypeCustomCreateView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(tags=["Host"])
 class AccommodationImageListCreateView(generics.ListCreateAPIView):
     queryset = Accommodation_Image.objects.all()
     serializer_class = AccommodationImageSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
 
 
+@extend_schema(tags=["Host"])
 class AccommodationImageRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Accommodation_Image.objects.all()
     serializer_class = AccommodationImageSerializer
     permission_classes = [AllowAny]  # [IsAuthenticated]
 
 
+@extend_schema(tags=["Host"])
 class GPSInfoRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     queryset = GPS_Info.objects.all()
     serializer_class = GPSInfoSerializer

@@ -271,9 +271,14 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Your Project API",
-    "DESCRIPTION": "API documentation",
+    "TITLE": "My API",
+    "DESCRIPTION": "API documentation for my project",
     "VERSION": "1.0.0",
+    "TAGS": [
+        {"name": "User", "description": "Operations related to user accounts and profiles"},
+        {"name": "Host", "description": "Operations related to hosts and their listings"},
+        {"name": "Guest", "description": "Operations related to guests and bookings"},
+    ],
 }
 
 

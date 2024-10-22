@@ -11,7 +11,7 @@ class MainPageSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Accommodation
-        fields = ["name", "rooms", "hotel_img"]
+        fields = ["id", "name", "rooms", "hotel_img"]
 
     def get_rooms(self, obj: Accommodation) -> Union[int, None]:
         min_price_room = obj.room_set.order_by("price").first()

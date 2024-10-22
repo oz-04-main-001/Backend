@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -10,6 +11,7 @@ from apps.accommodations.serializers.accommodation_serializer import (
 from ..models.accommodation_model import Accommodation
 
 
+@extend_schema(tags=["Host"])
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def accommodation_list(request):
@@ -18,6 +20,7 @@ def accommodation_list(request):
     return Response(serializer.data)
 
 
+@extend_schema(tags=["Host"])
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def accommodation_create(request):
@@ -28,6 +31,7 @@ def accommodation_create(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@extend_schema(tags=["Host"])
 @api_view(["GET", "PUT", "DELETE"])
 @permission_classes([IsAuthenticated])
 def accommodation_detail(request, pk):
@@ -53,6 +57,7 @@ def accommodation_detail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@extend_schema(tags=["Host"])
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def accommodation_activate(request, pk):
