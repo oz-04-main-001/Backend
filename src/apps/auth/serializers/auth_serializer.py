@@ -87,13 +87,13 @@ class UserEmailLookupSerializer(serializers.Serializer):
         phone_number = data.get("phone_number")
         full_name = data.get("full_name")
 
-        last_name = full_name[0]
-        first_name = full_name[1:]
-
-        user = self.user_auth_service.find_user_by_phone_and_name(phone_number, first_name, last_name)
+        user = self.user_auth_service.find_user_by_phone(phone_number)
 
         if not user:
             raise serializers.ValidationError("No user found with this phone number and full name.")
+
+        if user.name != full_name:
+            raise serializers.ValidationError("Full name does not match with the phone number.")
 
         data["user"] = user
         return data

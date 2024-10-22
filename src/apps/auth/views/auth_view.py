@@ -260,7 +260,7 @@ class PasswordResetAPIView(GenericAPIView):
     user_auth_service = UserAuthService()
     otp_service = OTPService()
 
-    def patch(self, request: Request, *args, **kwargs) -> Response:
+    def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         try:
             email = request.session.get("reset_email")
             otp_verified = request.session.get("otp_verified", False)
@@ -273,7 +273,7 @@ class PasswordResetAPIView(GenericAPIView):
 
             password = serializer.validated_data.get("password")
 
-            user = self.user_auth_service.get_user_by_email(email=email)
+            user: User | None = self.user_auth_service.get_user_by_email(email=email)
             self.user_auth_service.set_user_password(user, password)
 
             del request.session["reset_email"]

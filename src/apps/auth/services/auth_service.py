@@ -1,5 +1,4 @@
-from botocore.exceptions import ValidationError
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.users.models import User, WithdrawManager
 
@@ -23,8 +22,8 @@ class UserAuthService:
         user.save()
 
     @staticmethod
-    def find_user_by_phone_and_name(phone_number: str, first_name: str, last_name: str) -> User | None:
-        return User.objects.get_user_by_phone_and_name(phone_number, first_name, last_name)
+    def find_user_by_phone(phone_number: str) -> User | None:
+        return User.objects.get_user_by_phone(phone_number)
 
     @staticmethod
     def get_user_by_email(email: str) -> User:

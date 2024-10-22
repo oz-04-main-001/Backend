@@ -9,6 +9,7 @@ from apps.auth.serializers.auth_serializer import (
     UserEmailLookupSerializer,
     UserRegistrationSerializer,
 )
+from apps.auth.services.auth_service import UserAuthService
 
 User = get_user_model()
 
@@ -101,36 +102,66 @@ class LoginSerializerTest(TestCase):
 
 class UserEmailLookupSerializerTest(TestCase):
     def setUp(self):
-        self.valid_data = {
-            "email": "test@example.com",
-            "first_name": "John",
-            "last_name": "Doe",
-            "password": "password123",
-            "password2": "password123",
-            "birth_date": "1990-01-01",
-            "gender": "male",
-            "phone_number": "010-1234-5678",  # 올바른 형식
-        }
-        self.invalid_phone_number_data = self.valid_data.copy()
-        self.invalid_phone_number_data["phone_number"] = "01012345678"
+        self.user = User.objects.create_user(
+            email="test@example.com",
+            first_name="John",
+            last_name="Doe",
+            phone_number="010-1234-5678",
+            gender="male",
+            birth_date="1990-01-01",
+            password="password123",
+        )
+        self.valid_data = {"phone_number": "010-1234-5678", "full_name": "John Doe"}
+        self.invalid_phone_number_data = {"phone_number": "01012345678", "full_name": "John Doe"}
+        self.non_existent_user_data = {"phone_number": "010-9999-9999", "full_name": "Jane Doe"}
 
-    def test_registration_serializer_with_invalid_phone_number(self):
-        serializer = UserRegistrationSerializer(data=self.invalid_phone_number_data)
+        # 모의 UserAuthService
+        self.user_auth_service = UserAuthService()
+
+    def test_email_lookup_serializer_with_valid_data(self):
+        serializer = UserEmailLookupSerializer(data=self.valid_data)
+        if not serializer.is_valid():
+            print(serializer.errors)  # 오류 출력
+        self.assertTrue(serializer.is_valid())
+
+    def test_email_lookup_serializer_with_invalid_phone_number(self):
+        serializer = UserEmailLookupSerializer(data=self.invalid_phone_number_data)
         with self.assertRaises(ValidationError) as context:
             serializer.is_valid(raise_exception=True)
         self.assertIn("Phone number must be in the format 010-1234-5678.", str(context.exception))
 
-    def test_user_email_lookup_serializer(self):
-        data = {"phone_number": "010-1234-5678", "full_name": "John Doe"}
-        serializer = UserEmailLookupSerializer(data=data)
-        self.assertTrue(serializer.is_valid())
+    def test_email_lookup_serializer_with_non_existent_user(self):
+        serializer = UserEmailLookupSerializer(data=self.non_existent_user_data)
+        with self.assertRaises(ValidationError) as context:
+            serializer.is_valid(raise_exception=True)
+        self.assertIn("No user found with this phone number and full name.", str(context.exception))
 
 
 class PasswordResetRequestSerializerTest(TestCase):
-    def test_password_reset_request_serializer(self):
-        data = {"email": "test@example.com"}
-        serializer = PasswordResetRequestSerializer(data=data)
+    def setUp(self):
+        self.existing_user_email = "existing@example.com"
+        self.non_existing_user_email = "nonexisting@example.com"
+
+        User.objects.create_user(
+            email=self.existing_user_email,
+            first_name="John",
+            last_name="Doe",
+            phone_number="010-1234-5678",
+            gender="male",
+            birth_date="1990-01-01",
+            password="password123",
+        )
+
+    def test_validate_email_with_existing_user(self):
+        serializer = PasswordResetRequestSerializer(data={"email": self.existing_user_email})
         self.assertTrue(serializer.is_valid())
+
+    def test_validate_email_with_non_existing_user(self):
+        serializer = PasswordResetRequestSerializer(data={"email": self.non_existing_user_email})
+        with self.assertRaises(ValidationError) as context:
+            serializer.is_valid(raise_exception=True)
+
+        self.assertIn("No user is associated with this email.", str(context.exception))
 
 
 class PasswordResetSerializerTest(TestCase):

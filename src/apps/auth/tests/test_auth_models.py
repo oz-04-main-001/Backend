@@ -39,24 +39,40 @@ class UserManagerTest(TestCase):
 
     def test_get_user_by_email(self):
         user = User.objects.get_user_by_email("test@example.com")
+        self.assertIsNotNone(user)
         self.assertEqual(user.email, "test@example.com")
+
+    def test_get_user_by_email_not_found(self):
+        user = User.objects.get_user_by_email("notfound@example.com")
+        self.assertIsNone(user)
 
     def test_get_user_by_email_or_phone(self):
         user = User.objects.get_user_by_email_or_phone(email="nonexistent@example.com", phone_number="010-1234-5678")
+        self.assertIsNotNone(user)
         self.assertEqual(user.email, "test@example.com")
 
     def test_get_user_by_id(self):
         user = User.objects.get_user_by_id(self.user.id)
+        self.assertIsNotNone(user)
         self.assertEqual(user.email, "test@example.com")
+
+    def test_get_user_by_id_not_found(self):
+        user = User.objects.get_user_by_id(9999)
+        self.assertIsNone(user)
 
     def test_deactivate_user(self):
         deactivated_user = User.objects.deactivate_user(self.user)
         self.assertFalse(deactivated_user.is_active)
 
-    def test_get_user_by_phone_and_name(self):
-        user = User.objects.get_user_by_phone_and_name(phone_number="010-1234-5678", first_name="John", last_name="Doe")
+    def test_get_user_by_phone(self):
+        user = User.objects.get_user_by_phone(phone_number="010-1234-5678")
+        self.assertIsNotNone(user)
         self.assertEqual(user.email, "test@example.com")
 
+    def test_get_user_by_phone_invalid(self):
+        user = User.objects.get_user_by_phone(phone_number="010-9999-9999")
+        self.assertIsNone(user)
+
     def test_user_not_found(self):
-        with self.assertRaises(ObjectDoesNotExist):
-            User.objects.get_user_by_email("notfound@example.com")
+        user = User.objects.get_user_by_email("notfound@example.com")
+        self.assertIsNone(user)
