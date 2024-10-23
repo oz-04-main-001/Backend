@@ -3,6 +3,7 @@
 from django.db import models
 
 from apps.accommodations.models import Accommodation
+from apps.rooms.querysets.room_queryset import RoomQuerySet
 
 
 class Room(models.Model):
@@ -16,6 +17,8 @@ class Room(models.Model):
     check_in_time = models.DateTimeField()
     check_out_time = models.DateTimeField()
     is_available = models.BooleanField(default=True)
+
+    objects = RoomQuerySet.as_manager()
 
 
 class RoomType(models.Model):

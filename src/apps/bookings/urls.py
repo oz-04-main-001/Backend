@@ -6,7 +6,7 @@ app_name = "bookings"  # 앱 이름 설정
 
 urlpatterns: list = [
     path(
-        "request/<int:acoommodation_id>/<int:pk>",
+        "request/<int:accommodation_id>/<int:room_id>",
         booking_guest_view.BookingRequestCreateView.as_view(),
         name="booking_request",
     ),
