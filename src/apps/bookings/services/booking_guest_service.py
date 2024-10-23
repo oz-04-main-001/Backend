@@ -27,3 +27,14 @@ class BookingService:
     @staticmethod
     def check_overlapping_bookings(room, check_in_date, check_out_date):
         return Booking.objects.overlapping(room, check_in_date, check_out_date)
+
+    @staticmethod
+    def cancel_booking(booking_id: str):
+        booking = Booking.objects.get_by_booking_id(booking_id=booking_id)
+
+        if booking is None:
+            raise Booking.DoesNotExist("Booking not found.")
+
+        booking.status = "cancelled_by_guest"
+        booking.save()
+        return booking

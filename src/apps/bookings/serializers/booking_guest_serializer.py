@@ -74,10 +74,3 @@ class BookingReqeustCreateSerializer(serializers.ModelSerializer):
         data["total_price"] = total_price
 
         return data
-
-
-class BookingCancelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Booking
-        fields = ["id", "status"]
-        read_only_fields = ["id"]
