@@ -19,7 +19,7 @@ class BookingRequestSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField()
     check_in_date = serializers.SerializerMethodField()
     check_out_date = serializers.SerializerMethodField()
-    # personnel = serializers.SerializerMethodField()
+    guests_count = serializers.SerializerMethodField()
 
     # bed_count =
     # room_count =
@@ -29,6 +29,7 @@ class BookingRequestSerializer(serializers.ModelSerializer):
             "accommodation_name",
             "check_in_date",
             "check_out_date",
+            "guests_count",
             "name",
             "capacity",
             "check_in_time",
@@ -68,6 +69,9 @@ class BookingRequestSerializer(serializers.ModelSerializer):
             return check_out_date
         return None
 
-    # def get_personnel(self, obj: Room) -> int:
-    #     request = self.context.get("request")
-    #     personnel = request.query_params.get("personnel")
+    def get_guests_count(self, obj: Room) -> int:
+        request = self.context.get("request")
+        guests_count = request.query_params.get("guests_count", None)
+        if guests_count:
+            return guests_count
+        return 0

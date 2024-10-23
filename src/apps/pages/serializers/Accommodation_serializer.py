@@ -2,9 +2,14 @@ from typing import Union
 
 from rest_framework import serializers
 
-from apps.accommodations.models import Accommodation, Accommodation_Image, GPS_Info
+from apps.accommodations.models import (
+    Accommodation,
+    Accommodation_Image,
+    GPS_Info,
+    RefundPolicy,
+)
 from apps.amenities.models import AccommodationAmenity, Amenity
-from apps.pages.serializers.room_serializer import RoomSerializer
+from apps.pages.serializers.room_serializer import RoomImagesSerializer, RoomSerializer
 from apps.rooms.models import Room, Room_Image
 
 
@@ -34,11 +39,19 @@ class AccommodationAmenitySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-# 호텔 기본 정보 - 이름, 전화번호, 상세내용, 이용수칙(환불규정?)
+# 호텔 환불정책
+class AccommodationRefundPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefundPolicy
+        fields = ["seven_days_before", "five_days_before", "three_days_before", "one_day_before", "same_day"]
+
+
+# 호텔 기본 정보 - 이름, 전화번호, 상세내용, 이용수칙
 class AccommodationInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accommodation
         fields = ["name", "phone_number", "description", "rules"]
+
 
 # 숙박업소에 딸려있는 룸정보
 class AccommodationRoomSerializer(serializers.ModelSerializer):
@@ -70,9 +83,6 @@ class AccommodationRoomSerializer(serializers.ModelSerializer):
         return serializer.data
 
 
-
-
-
 # ######################################
 # 호텔 -> 숙소 사진, 이름, 주소, 룸최저가, 객실리스트, / 숙소소개, 편의시설, 이용규칙, 취소규정
 # 룸 -> 룬사진1장 ,룸타입, 룸이름, 입실시간, 퇴실시간, 이용요금, 객실정보(기준인원, 침대싸이즈, 침대갯수, 방갯수)
@@ -83,12 +93,12 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
     address = serializers.SerializerMethodField()
     min_price = serializers.SerializerMethodField()
     rooms = serializers.SerializerMethodField()
-    # hotel_amenities = serializers.SerializerMethodField()
+    refund_policy = serializers.SerializerMethodField()
 
     class Meta:
         model = Accommodation
         # 호텔 ->    숙소사진,    이름,    주소,      룸최저가,    객실리스트,           /      숙소소개,    이용규칙,  취소규정?,  편의시설,
-        fields = ["accommodation_img", "name", "address", "min_price", "rooms", "description", "rules",]
+        fields = ["accommodation_img", "name", "address", "min_price", "rooms", "description", "rules", "refund_policy"]
         # exclude = ['id', 'created_at', 'updated_at', 'is_active', 'average_rating']
 
     def get_accommodation_img(self, obj: Accommodation) -> Union[str, None]:
@@ -116,13 +126,37 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             return min_price.price
         return None
 
+    # 룸정보 + 룸대표이미지
     def get_rooms(self, obj):
         rooms = Room.objects.filter(accommodation=obj)
-        serializer = RoomSerializer(rooms, many=True)
-        return serializer.data
+        room_list = []
 
+        for room in rooms:
+            room_serializer = RoomSerializer(room)
+            room_dict = room_serializer.data
 
-    # def get_hotel_amenities(self, obj):
-    #     hotel_amenities = Amenity.objects.filter(accommodationamenity=obj)
-    #     serializer = HotelAmenitySerializer(hotel_amenities, many=True)
-    #     return serializer.data
+            # 현재 room에 해당하는 이미지들을 가져옵니다.
+            room_images = Room_Image.objects.filter(room_id=room.id)
+
+            # 대표 이미지가 담길 변수
+            representative_image = None
+
+            # room에 대한 이미지를 순회하며 대표 이미지를 찾습니다.
+            for image in room_images:
+                if image.is_representative:
+                    representative_image = image.image.name
+                    break  # 대표 이미지를 찾으면 더 이상 순회하지 않음
+
+            # 직렬화된 데이터에 'images' 필드로 대표 이미지를 추가
+            room_dict["images"] = representative_image
+
+            # 각 room의 데이터를 room_list에 추가
+            room_list.append(room_dict)
+
+        # room_list에는 각 room의 대표 이미지가 포함됨
+        return room_list
+
+    def get_refund_policy(self, obj):
+        refund_policy = RefundPolicy.objects.filter(accommodation=obj)
+        refund_policy_serializer = AccommodationRefundPolicySerializer(refund_policy, many=True)
+        return refund_policy_serializer.data
