@@ -1,6 +1,7 @@
+from datetime import datetime, time
+
 from django.db import migrations, models
 from django.utils import timezone
-from datetime import datetime, time
 
 
 def convert_time_to_datetime(apps, schema_editor):

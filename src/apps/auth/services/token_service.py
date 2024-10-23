@@ -1,6 +1,5 @@
 from typing import Optional
 
-
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
