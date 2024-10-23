@@ -13,8 +13,8 @@ class Room(models.Model):
     price = models.IntegerField()
     stay_type = models.BooleanField()
     description = models.TextField(null=True, blank=True)
-    check_in_time = models.TimeField()
-    check_out_time = models.TimeField()
+    check_in_time = models.DateTimeField()
+    check_out_time = models.DateTimeField()
     is_available = models.BooleanField(default=True)
 
 
@@ -26,7 +26,17 @@ class RoomType(models.Model):
 
 class Room_Image(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to="room_images/")
+    image = models.ImageField(upload_to="room_images")
+    is_representative = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["room", "is_representative"],
+                condition=models.Q(is_representative=True),
+                name="unique_representative_image_per_room",
+            )
+        ]
 
 
 class RoomInventory(models.Model):

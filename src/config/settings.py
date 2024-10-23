@@ -34,9 +34,7 @@ ALLOWED_HOSTS = ["52.78.188.221", "localhost", "127.0.0.1"]
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # postgresql gdal settings
-# GDAL_LIBRARY_PATH = "/opt/homebrew/Cellar/gdal/3.9.3_1/lib/libgdal.dylib"
-# GEOS_LIBRARY_PATH = "/opt/homebrew/opt/geos/lib/libgeos_c.dylib"
-# GDAL과 GEOS 경로 설정
+
 GDAL_LIBRARY_PATH = os.getenv("GDAL_LIBRARY_PATH", "/usr/lib/aarch64-linux-gnu/libgdal.so")
 GEOS_LIBRARY_PATH = os.getenv("GEOS_LIBRARY_PATH", "/usr/lib/aarch64-linux-gnu/libgeos_c.so")
 
@@ -80,7 +78,6 @@ INSTALLED_APPS = OWN_APPS + DJANGO_APPS + THIRD_PARTY_APPS
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -266,7 +263,7 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ],
 }
 
@@ -293,6 +290,11 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", "default-secret-key"),
 }
+
+# if DEBUG:
+#     SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"] = timedelta(days=3650)  # 개발 환경용 긴 토큰
+# else:
+#     SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"] = timedelta(minutes=5)  # 실제 배포 환경용 짧은 토큰
 
 
 # Aws S3 settings

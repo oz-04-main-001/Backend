@@ -129,7 +129,9 @@ class CustomTokenRefreshView(APIView):
         except ValidationError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
-            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                {"error": "An unexpected error occurred." + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 @extend_schema(tags=["User"])
@@ -140,7 +142,7 @@ class LogoutAPIView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         user = request.user
 
-        self.token_service.delete_refresh_token(f"refresh_token:{user.id}")
+        self.token_service.delete_refresh_token(user.id)
 
         return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
 

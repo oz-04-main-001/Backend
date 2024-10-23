@@ -1,7 +1,9 @@
 import random
+from datetime import datetime, time
 
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from faker import Faker
 
 from apps.accommodations.models import Accommodation, AccommodationType, GPS_Info
@@ -120,6 +122,14 @@ class Command(BaseCommand):
     def generate_rooms(self, fake):
         print("Generating Rooms...")
         for accommodation in Accommodation.objects.all():
+            # 체크인 시간 생성 (예: 오후 2시에서 6시 사이)
+            check_in_hour = random.randint(14, 18)
+            check_in_time = timezone.make_aware(datetime.combine(datetime.now().date(), time(hour=check_in_hour)))
+
+            # 체크아웃 시간 생성 (예: 오전 10시에서 12시 사이)
+            check_out_hour = random.randint(10, 12)
+            check_out_time = timezone.make_aware(datetime.combine(datetime.now().date(), time(hour=check_out_hour)))
+
             room = Room.objects.create(
                 accommodation=accommodation,
                 name=fake.word(),
@@ -128,12 +138,13 @@ class Command(BaseCommand):
                 price=random.randint(100, 1000),
                 stay_type=fake.boolean(),
                 description=fake.text(),
-                check_in_time=fake.time(),
-                check_out_time=fake.time(),
+                check_in_time=check_in_time,
+                check_out_time=check_out_time,
                 is_available=fake.boolean(),
             )
             RoomType.objects.create(room=room, is_customized=fake.boolean(), type_name=fake.word())
             RoomInventory.objects.create(room=room, count_room=random.randint(1, 5))
+            print(f"Room created: {room.name} in {accommodation.name}")
             print(f"Room created: {room.name} in {accommodation.name}")
 
     def generate_amenities(self, fake):
