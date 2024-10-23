@@ -1,9 +1,9 @@
+# 20241023 수정
 from django.urls import path
 
 from apps.accommodations.views import accommodation_views as views
 
 app_name = "accommodations"
-
 urlpatterns = [
     # 숙소 기본 CRUD
     path(
@@ -23,13 +23,13 @@ urlpatterns = [
         name="accommodation-search",
     ),  # GET: /accommodations/search/?search=keyword&min_rating=4&type=hotel
     path(
-        "location/<str:city>/<str:state>/",
+        "none/location/<str:city>/<str:state>/",
         views.AccommodationsByLocationView.as_view(),
         name="accommodation-by-location",
     ),  # GET: /accommodations/location/seoul/korea/
     # 숙소 벌크 생성
     path(
-        "bulk-create/",
+        "none/bulk-create/",
         views.AccommodationBulkCreateView.as_view(),
         name="accommodation-bulk-create",
     ),  # POST: /accommodations/bulk-create/
@@ -50,7 +50,7 @@ urlpatterns = [
         name="accommodation-type-custom-create",
     ),  # POST: /accommodations/types/custom/
     path(
-        "types/statistics/",
+        "none/types/statistics/",
         views.AccommodationTypeStatisticsView.as_view(),
         name="accommodation-type-statistics",
     ),  # GET: /accommodations/types/statistics/
@@ -66,7 +66,7 @@ urlpatterns = [
         name="accommodation-image-detail",
     ),  # GET, PUT, PATCH, DELETE: /accommodations/images/1/
     path(
-        "<int:accommodation_id>/images/bulk-upload/",
+        "/none/<int:accommodation_id>/images/bulk-upload/",
         views.AccommodationImageBulkUploadView.as_view(),
         name="accommodation-image-bulk-upload",
     ),  # POST: /accommodations/1/images/bulk-upload/
