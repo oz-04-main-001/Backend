@@ -1,7 +1,10 @@
 from typing import Optional
 
+import jwt
+from django.conf import settings
+from jwt import decode
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken, UntypedToken
 
 from apps.common.util.redis_client import get_redis_client
 from apps.users.models import User
@@ -24,11 +27,11 @@ class TokenService:
 
     @staticmethod
     def _store_refresh_token_in_redis(user_id: int, refresh_token: str, expiration) -> None:
-        redis_client.set(f"refresh_token:{user_id}", refresh_token, ex=expiration)
+        redis_client.set(f"refresh_{user_id}", refresh_token, ex=expiration)
 
     @staticmethod
     def _get_stored_refresh_token(user_id: int) -> str:
-        stored_refresh_token = redis_client.get(f"refresh_token:{user_id}")
+        stored_refresh_token = redis_client.get(f"refresh_{user_id}")
         if stored_refresh_token is None:
             raise AuthenticationFailed("Refresh token is invalid or has expired.")
 
@@ -36,10 +39,12 @@ class TokenService:
 
     def refresh_access_token(self, access_token: str) -> str:
         try:
-            token: AccessToken = AccessToken(access_token)  # type: ignore
+
+            token = AccessToken(str(access_token), verify=False)  # type: ignore
+
             user_id = token["user_id"]
-        except Exception:
-            raise AuthenticationFailed("Invalid access token.")
+        except Exception as e:
+            raise AuthenticationFailed(f"Invalid access token. {e}")
 
         stored_refresh_token = self._get_stored_refresh_token(user_id)
 
@@ -50,7 +55,8 @@ class TokenService:
 
     @staticmethod
     def delete_refresh_token(user_id: int) -> None:
-        redis_client.delete(f"refresh_token:{user_id}")
+        redis_client.delete(f"refresh_{user_id}")
+        print("삭제 완료")
 
     @staticmethod
     def validate_access_token(access_token: Optional[str]) -> None:

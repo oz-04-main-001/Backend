@@ -13,8 +13,8 @@ class Room(models.Model):
     price = models.IntegerField()
     stay_type = models.BooleanField()
     description = models.TextField(null=True, blank=True)
-    check_in_time = models.TimeField()
-    check_out_time = models.TimeField()
+    check_in_time = models.DateTimeField()
+    check_out_time = models.DateTimeField()
     is_available = models.BooleanField(default=True)
 
 
