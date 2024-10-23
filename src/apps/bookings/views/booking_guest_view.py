@@ -24,7 +24,9 @@ class BookingRequestCreateView(GenericAPIView):
         data["accommodation_id"] = accommodation_id
         data["room_id"] = room_id
 
-        serializer = self.get_serializer(data=data)
+        user_data = BookingService.check_booker_data(data, request.user)
+
+        serializer = self.get_serializer(data=user_data)
         serializer.is_valid(raise_exception=True)
 
         BookingService.create_booking(serializer.validated_data, request.user)

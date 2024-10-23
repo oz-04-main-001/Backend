@@ -3,12 +3,10 @@ from apps.users.models import User
 
 
 class BookingService:
-    def create_booking(self, data: dict, user: User):
-
-        self._check_booker_data(data, user)
-
+    @staticmethod
+    def create_booking(data: dict, user: User):
         booking = Booking.objects.create(
-            guest=data["guest"],
+            guest=user,
             check_in_date=data["check_in_date"],
             check_out_date=data["check_out_date"],
             guests_count=data["guests_count"],
@@ -20,11 +18,11 @@ class BookingService:
         return booking
 
     @staticmethod
-    def _check_booker_data(data, user):
+    def check_booker_data(data: dict, user: User) -> dict:
         if not data.get("booker_phone_number") or data.get("booker_phone_number"):
             data["booker_phone_number"] = user.phone_number
             data["booker_name"] = user.name
-            data["guest"] = user
+        return data
 
     @staticmethod
     def check_overlapping_bookings(room, check_in_date, check_out_date):

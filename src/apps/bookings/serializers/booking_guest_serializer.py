@@ -9,8 +9,10 @@ from apps.rooms.models import Room
 
 
 class BookingReqeustCreateSerializer(serializers.ModelSerializer):
-    accommodation_id = serializers.IntegerField(write_only=True)
-    room_id = serializers.IntegerField(write_only=True)
+    accommodation_id = serializers.IntegerField()
+    room_id = serializers.IntegerField()
+    booker_phone_number = serializers.CharField()
+    booker_name = serializers.CharField()
 
     class Meta:
         model = Booking
@@ -55,8 +57,8 @@ class BookingReqeustCreateSerializer(serializers.ModelSerializer):
 
         overlapping_bookings = BookingService.check_overlapping_bookings(room, check_in_date, check_out_date)
 
-        if overlapping_bookings.exists():
-            raise serializers.ValidationError("This room is already booked for the selected dates.")
+        if room.roominventory.count_room < overlapping_bookings + 1:
+            raise serializers.ValidationError("No rooms available for the selected dates.")
 
         max_booking_days = 30
 
