@@ -1,40 +1,43 @@
 from datetime import date
+
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.db.models import Q
+
+from apps.accommodations.models import Accommodation
 from apps.bookings.models import Booking
-from apps.rooms.models import Room
 from apps.host_management.serializers.host_booking import BookingSerializer
 
-# BookingListView 업데이트
-class BookingListView(generics.GenericAPIView):
+
+@extend_schema(tags=["Host"])
+class BookingCheckView(generics.GenericAPIView):
+    """예약 내역 관리"""
+
     serializer_class = BookingSerializer
     permission_classes = (IsAuthenticated,)
-    queryset = Booking.objects.all()
 
     def get(self, request, *args, **kwargs):
+        """
+        호스트가 예약 내역을 관리하는 기능
+        날짜의 값을 쿼리파라미터로 받아와야 함
+        """
+
+        host = request.user
+
         selected_date = self.request.query_params.get("date", None)
-        room_id = self.request.query_params.get("room_id", None)
-        guest_id = self.request.query_params.get("guest_id", None)
-        accommodation_id = self.request.query_params.get("accommodation_id", None)
 
         try:
-            if guest_id:
-                bookings = Booking.objects.filter(guest_id=guest_id)
-            elif accommodation_id:
-                bookings = Booking.objects.filter(room__accommodation_id=accommodation_id)
-            else:
-                bookings = Booking.objects.all()
+            if selected_date:
+                # 호스트가 등록한 숙소 가져오기
+                accommodations = Accommodation.objects.filter(host=host)
+                accommodation_ids = accommodations.values_list('id', flat=True)
 
-            if selected_date and room_id:
+                # 선택한 날짜에 예약이 있는 숙소 목록 필터링
                 selected_date = date.fromisoformat(selected_date)
-                rooms = Room.objects.filter(id=room_id, is_available=True)
-                if not rooms.exists():
-                    return Response({"detail": "해당 방은 예약이 불가능합니다."}, status=status.HTTP_400_BAD_REQUEST)
-                booking_list = bookings.filter(
-                    Q(check_in_date__lte=selected_date) & Q(check_out_date__gte=selected_date),
-                    room_id=room_id,
+                booking_list = Booking.objects.filter(
+                    check_in_date__lte=selected_date, check_out_date__gte=selected_date,
+                    room__accommodation_id__in=accommodation_ids,
                 )
                 serializer = BookingSerializer(booking_list, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
@@ -43,26 +46,52 @@ class BookingListView(generics.GenericAPIView):
         except ValueError:
             return Response({"detail": "잘못된 날짜 형식입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-# BookingRequestCheckView 업데이트
+
+@extend_schema(tags=["Host"])
 class BookingRequestCheckView(generics.GenericAPIView):
+    """예약 요청 관리"""
+
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
     permission_classes = [IsAuthenticated]
 
-    def patch(self, request, *args, **kwargs):
+    def patch(self, request):
+        """
+        게스트가 보낸 예약 요청을 수락/거절하는 기능
+        클라이언트로가 patch요청을 보내면 요청 데이터로 부터 전송된 action이라는 키를 가져와야 함
+        action의 값에 따라 booking.status의 값으로 반환함
+        """
+
         booking = self.get_object()
         action = request.data.get("action")
 
         if action == "accept":
             booking.status = "confirmed"
-        elif action == "reject":
-            booking.status = "rejected"
-        elif action == "use_complete":
-            booking.status = "use_complete"
-        elif action == "canceled":
-            booking.status = "canceled"
+        elif action == "cancelled":
+            booking.status = "cancelled_by_host"
         else:
             return Response({"detail": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
 
         booking.save()
         return Response({"status": booking.status}, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["Host"])
+class CompleteBookingsView(generics.ListAPIView):
+    """이용 완료 내역"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = BookingSerializer
+    queryset = Booking.objects.all()
+
+    def filter_queryset(self, queryset):
+        """
+        게스트가 날짜 기준으로 숙소 사용을 완료한 내역을 가져온다.
+        """
+
+        user = self.request.user
+        selected_date = self.request.query_params.get("date", default=date.today())
+        return queryset.filter(
+            accommodation__host=user.host,
+            check_in_date__lte=selected_date,
+            status='completed',
+        )
