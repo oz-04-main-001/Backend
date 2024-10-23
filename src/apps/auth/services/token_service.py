@@ -1,10 +1,8 @@
 from typing import Optional
 
-import jwt
-from django.conf import settings
-from jwt import decode
+
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
-from rest_framework_simplejwt.tokens import AccessToken, RefreshToken, UntypedToken
+from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from apps.common.util.redis_client import get_redis_client
 from apps.users.models import User

@@ -26,7 +26,17 @@ class RoomType(models.Model):
 
 class Room_Image(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="images")
-    image = models.ImageField(upload_to="room_images/")
+    image = models.ImageField(upload_to="room_images")
+    is_representative = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["room", "is_representative"],
+                condition=models.Q(is_representative=True),
+                name="unique_representative_image_per_room",
+            )
+        ]
 
 
 class RoomInventory(models.Model):
