@@ -10,15 +10,21 @@ class IsHost(permissions.BasePermission):
 
     def has_permission(self, request, view):
         """사용자가 인증되었고 비즈니스 프로필이 승인된 경우에만 접근 허용."""
+
+        # 비즈니스 프로필이 있는지 확인
         try:
             business_profile = request.user.business_profile
-            # 추가적인 호스트 자격 검증 로직을 넣을 수 있습니다.
-            # 이후 verification_status == approved인 경우만 통과하도록
+
+            # 비즈니스 프로필의 검증 상태 확인
             # if business_profile.verification_status == "approved":
-            #     return True
-            return True
+
+            # 사용자 유형이 'host' 또는 'admin'인 경우만 허용
+            if request.user.user_type in ["host", "admin"]:
+                return True
         except AttributeError:
-            return False
+            return False  # 비즈니스 프로필이 없는 경우 접근 거부
+
+        return False  # 위 조건을 모두 만족하지 않으면 접근 거부
 
     def has_object_permission(self, request, view, obj):
         # 객체 수준의 권한이 필요한 경우 여기에 로직을 추가합니다.

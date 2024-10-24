@@ -2,7 +2,7 @@ from datetime import datetime, date
 
 from rest_framework import serializers
 
-from apps.accommodations.models import Accommodation
+from apps.accommodations.models import Accommodation, Accommodation_Image
 from apps.bookings.models import Booking
 from apps.common.choices import BOOKING_STATUS_CHOICES
 from apps.rooms.models import Room
@@ -72,24 +72,6 @@ class BookingSerializer(serializers.ModelSerializer):
         """
         if value <= 0:
             raise serializers.ValidationError("게스트 수는 양수여야 합니다.")
-        return value
-
-
-class AccommodationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Accommodation
-        fields = ["host", "name", "phone_number", "description", "rules", "created_at", "updated_at"]
-
-    def validate_phone_number(self, value):
-        """
-        전화번호가 특정 형식을 따르는지 확인
-        """
-        import re
-
-        if not re.match(r"^\d{2,3}-\d{3,4}-\d{4}$", value):
-            raise serializers.ValidationError(
-                "유효하지 않은 전화번호 형식입니다. 02-123-4567 또는 010-1234-5678 형식을 사용하세요."
-            )
         return value
 
 
@@ -186,3 +168,44 @@ class BookingRequestCheckSerializer(serializers.Serializer):
             raise serializers.ValidationError("You don't have permission to modify this booking.")
 
         return data
+
+
+class BookingStatisticsSerializer(serializers.Serializer):
+    date = serializers.DateField(required=False)
+
+    def validate_date(self, value):
+        """날짜 검증 로직을 추가할 수 있습니다."""
+        return value or date.today()
+
+
+class AccommodationImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Accommodation_Image
+        fields = ["id", "image", "image_url", "is_representative"]
+
+    def get_image_url(self, obj):
+        """이미지 URL을 반환합니다."""
+        request = self.context.get("request")
+        return request.build_absolute_uri(obj.image.url) if obj.image else None
+
+
+class AccommodationHostManagementSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Accommodation
+        fields = ["id", "name", "image", "address"]
+
+    def get_image(self, obj):
+        representative_image = obj.images.filter(is_representative=True).first()
+        return (
+            AccommodationImageSerializer(representative_image, context=self.context).data
+            if representative_image
+            else None
+        )
+
+    def get_address(self, obj):
+        return obj.gps_info.address if obj.gps_info else None  # GPS 정보가 없을 경우 None 반환
