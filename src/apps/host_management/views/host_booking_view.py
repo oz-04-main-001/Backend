@@ -1,7 +1,7 @@
 from datetime import date
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -10,11 +10,11 @@ from apps.accommodations.models import Accommodation
 from apps.bookings.models import Booking
 from apps.common.permissions.host_permission import IsHost
 from apps.host_management.serializers.host_management_serializers import (
-    BookingSerializer,
+    AccommodationHostManagementSerializer,
     BookingCheckSerializer,
     BookingRequestCheckSerializer,
+    BookingSerializer,
     BookingStatisticsSerializer,
-    AccommodationHostManagementSerializer,
 )
 
 

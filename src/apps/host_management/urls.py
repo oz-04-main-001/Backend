@@ -7,7 +7,6 @@ from apps.host_management.views.host_booking_view import (
     MyAccommodationListView,
 )
 
-
 app_name = "host_management"
 
 urlpatterns = [
