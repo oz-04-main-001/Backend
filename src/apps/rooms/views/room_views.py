@@ -1,4 +1,4 @@
-# 20241023 수정
+# 20241024 수정
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -15,6 +15,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accommodations.models import Accommodation
+from apps.bookings.models import Booking
 from apps.rooms.models import Room, Room_Image, RoomInventory, RoomType
 from apps.rooms.serializers.room_serializer import (
     RoomImageSerializer,
@@ -32,7 +33,7 @@ class AccommodationRoomsView(generics.ListAPIView):
     permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ["is_available", "capacity"]
-    ordering_fields = ["price", "created_at"]
+    ordering_fields = ["price", "id"]
 
     def get_queryset(self):
         accommodation_id = self.kwargs.get("accommodation_id")
@@ -75,12 +76,6 @@ class RoomListCreateView(generics.ListCreateAPIView):
         if current_rooms >= MAX_ROOMS_PER_ACCOMMODATION:
             raise ValidationError(f"Maximum room limit ({MAX_ROOMS_PER_ACCOMMODATION}) reached")
 
-        # Check daily creation limit
-        today_rooms = Room.objects.filter(accommodation=accommodation, created_at__date=timezone.now().date()).count()
-
-        if today_rooms >= 10:  # 하루 최대 10개 방 생성 제한
-            raise ValidationError("Daily room creation limit reached")
-
     @transaction.atomic
     def perform_create(self, serializer):
         accommodation_id = self.request.data.get("accommodation")
@@ -106,17 +101,24 @@ class RoomDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = RoomSerializer
     permission_classes = [AllowAny]
 
+    # def get_serializer(self, *args, **kwargs):
+    #     # PATCH 요청의 경우 partial=True 설정
+    #     if self.request.method == 'PATCH':
+    #         kwargs['partial'] = True
+    #     return super().get_serializer(*args, **kwargs)
+
     def validate_room_status(self, room):
         """Validate if room can be modified/deleted"""
-        # Check if room has any active bookings
-        has_active_bookings = room.bookings.filter(check_out_date__gte=timezone.now()).exists()
+        # 활성 상태로 간주할 예약 상태들
+        ACTIVE_BOOKING_STATUSES = ["confirmed", "paid", "partially_paid", "check_in"]
+
+        # 해당 방의 활성 예약이 있는지 확인
+        has_active_bookings = Booking.objects.filter(
+            room=room, check_out_date__gte=timezone.now(), status__in=ACTIVE_BOOKING_STATUSES
+        ).exists()
 
         if has_active_bookings:
             raise ValidationError("Cannot modify/delete room with active bookings")
-
-        # Check if room is part of any active promotions
-        if hasattr(room, "promotions") and room.promotions.filter(end_date__gte=timezone.now()).exists():
-            raise ValidationError("Cannot modify/delete room with active promotions")
 
     def validate_owner(self, room):
         """Validate if user owns the room"""
@@ -166,12 +168,6 @@ class RoomImageCreateView(generics.CreateAPIView):
 
         if current_images >= MAX_IMAGES_PER_ROOM:
             raise ValidationError(f"Maximum image limit ({MAX_IMAGES_PER_ROOM}) reached")
-
-    def validate_image_upload_frequency(self, room):
-        """Validate image upload frequency"""
-        last_upload = Room_Image.objects.filter(room=room).order_by("-id").first()
-        if last_upload and (timezone.now() - last_upload.created_at) < timedelta(minutes=5):
-            raise ValidationError("Please wait 5 minutes between image uploads")
 
     def perform_create(self, serializer):
         room = get_object_or_404(Room, pk=self.kwargs["pk"])
@@ -245,16 +241,6 @@ class RoomTypeListCreateView(generics.ListCreateAPIView):
             raise ValidationError(
                 f"Maximum room type limit ({MAX_TYPES_PER_ACCOMMODATION}) reached for this accommodation"
             )
-
-    def validate_daily_creation_limit(self, accommodation):
-        """일일 생성 제한"""
-        MAX_DAILY_CREATIONS = 5
-        today_created = RoomType.objects.filter(
-            room__accommodation=accommodation, is_customized=True, created_at__date=timezone.now().date()
-        ).count()
-
-        if today_created >= MAX_DAILY_CREATIONS:
-            raise ValidationError(f"Daily room type creation limit ({MAX_DAILY_CREATIONS}) reached")
 
     def validate_accommodation_status(self, accommodation):
         """숙소 상태 검증"""

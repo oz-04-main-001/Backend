@@ -1,4 +1,4 @@
-# 20241023 수정
+# 20241024 수정
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -132,27 +132,40 @@ class RoomSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
+        # 필수 필드 검증
+        if not data.get("capacity"):
+            raise serializers.ValidationError({"capacity": "Capacity is required"})
+
+        if not data.get("max_capacity"):
+            raise serializers.ValidationError({"max_capacity": "Maximum capacity is required"})
+
+        if not data.get("price"):
+            raise serializers.ValidationError({"price": "Price is required"})
+
+        if not data.get("name"):
+            raise serializers.ValidationError({"name": "Name is required"})
+
         # 1. capacity validation
-        if data.get("capacity") > data.get("max_capacity"):
+        if data["capacity"] > data["max_capacity"]:
             raise serializers.ValidationError({"capacity": "Capacity cannot be greater than max capacity"})
 
-        if data.get("capacity") <= 0:
+        if data["capacity"] <= 0:
             raise serializers.ValidationError({"capacity": "Capacity must be greater than 0"})
 
         # 2. price validation
-        if data.get("price") <= 0:
+        if data["price"] <= 0:
             raise serializers.ValidationError({"price": "Price must be greater than 0"})
 
         # 3. check-in/out time validation
         check_in = data.get("check_in_time")
         check_out = data.get("check_out_time")
 
-        if check_in and check_out:
+        if check_in and check_out:  # 선택적 필드이므로 둘 다 있을 때만 검증
             if check_in >= check_out:
                 raise serializers.ValidationError({"check_in_time": "Check-in time must be before check-out time"})
 
         # 4. name validation
-        if len(data.get("name", "")) < 2:
+        if len(data["name"]) < 2:
             raise serializers.ValidationError({"name": "Room name must be at least 2 characters long"})
 
         return data

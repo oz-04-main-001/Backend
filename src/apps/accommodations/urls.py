@@ -1,4 +1,4 @@
-# 20241023 수정
+# 20241024 수정
 from django.urls import path
 
 from apps.accommodations.views import accommodation_views as views
@@ -18,7 +18,7 @@ urlpatterns = [
     ),  # GET, PUT, PATCH, DELETE: /accommodations/1/
     # 숙소 검색
     path(
-        "search/",
+        "none/search/",
         views.AccommodationSearchView.as_view(),
         name="accommodation-search",
     ),  # GET: /accommodations/search/?search=keyword&min_rating=4&type=hotel
@@ -40,7 +40,7 @@ urlpatterns = [
         name="accommodation-type-list-create",
     ),  # GET, POST: /accommodations/types/
     path(
-        "types/<int:pk>/",
+        "none/types/<int:pk>/",
         views.AccommodationTypeRetrieveUpdateDestroyView.as_view(),
         name="accommodation-type-detail",
     ),  # GET, PUT, PATCH, DELETE: /accommodations/types/1/
@@ -66,7 +66,7 @@ urlpatterns = [
         name="accommodation-image-detail",
     ),  # GET, PUT, PATCH, DELETE: /accommodations/images/1/
     path(
-        "/none/<int:accommodation_id>/images/bulk-upload/",
+        "none/<int:accommodation_id>/images/bulk-upload/",
         views.AccommodationImageBulkUploadView.as_view(),
         name="accommodation-image-bulk-upload",
     ),  # POST: /accommodations/1/images/bulk-upload/
