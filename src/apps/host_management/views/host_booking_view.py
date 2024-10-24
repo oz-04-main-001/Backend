@@ -6,8 +6,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.accommodations.models import Accommodation
+
 from apps.bookings.models import Booking
-from apps.host_management.serializers.host_booking import BookingSerializer
+from apps.host_management.serializers.host_management_serializers import BookingSerializer, AccommodationSerializer, \
+    RoomSerializer
+from apps.rooms.models import Room
 
 
 @extend_schema(tags=["Host"])
@@ -95,3 +98,107 @@ class CompleteBookingsView(generics.ListAPIView):
             check_in_date__lte=selected_date,
             status='completed',
         )
+
+
+@extend_schema(tags=["Host"])
+class MyAccommodationsUpdateView(generics.GenericAPIView):
+    """숙소 편집"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = AccommodationSerializer
+
+    def patch(self, request, *args, **kwargs):
+        """
+        호스트가 자신의 숙소 정보를 수정하는 기능
+        """
+        accommodation_id = kwargs.get('pk')
+        try:
+            accommodation = Accommodation.objects.get(id=accommodation_id, host=request.user)
+        except Accommodation.DoesNotExist:
+            return Response({"detail": "숙소를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        # 숙소 정보 수정 시 일부 필드만 수정할 수 있도록 설정
+        serializer = self.get_serializer(accommodation, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=["Host"])
+class MyAccommodationsDeleteView(generics.GenericAPIView):
+    """숙소 삭제"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = AccommodationSerializer
+    queryset = Accommodation.objects.all()
+
+    def delete(self, request, *args, **kwargs):
+        """
+        호스트가 자신의 숙소를 삭제하는 기능
+        """
+        accommodation_id = kwargs.get('pk')
+        try:
+            accommodation = Accommodation.objects.get(id=accommodation_id, host=request.user)
+        except Accommodation.DoesNotExist:
+            return Response({"detail": "숙소를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        accommodation.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=["Host"])
+class MyRoomsUpdateView(generics.GenericAPIView):
+    """객실 편집"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = RoomSerializer
+    queryset = Room.objects.all()
+
+    def patch(self, request, *args, **kwargs):
+        """
+        호스트가 자신의 객실 정보를 수정하는 기능
+        """
+        room_id = kwargs.get('pk')
+        try:
+            room = Room.objects.get(id=room_id, accommodation__host=request.user)
+        except Room.DoesNotExist:
+            return Response({"detail": "객실을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        # 객실 정보 수정 시 일부 필드만 수정할 수 있도록 설정
+        serializer = self.get_serializer(room, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=["Host"])
+class MyRoomsDeleteView(generics.GenericAPIView):
+    """객실 삭제"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = RoomSerializer
+    queryset = Room.objects.all()
+
+    def delete(self, request, *args, **kwargs):
+        """
+        호스트가 자신의 숙소 내 객실을 삭제하는 기능
+        """
+        room_id = kwargs.get('pk')
+        try:
+            room = Room.objects.get(id=room_id, accommodation__host=request.user)
+        except Room.DoesNotExist:
+            return Response({"detail": "객실을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        room.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema(tags=["Host"])
+class MyAccommodationListView(generics.ListAPIView):
+    """숙소 내역 조회"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = AccommodationSerializer
+
+    def get_queryset(self):
+        """
+        호스트가 등록한 모든 숙소를 반환합니다.
+        """
+        return Accommodation.objects.filter(host=self.request.user, is_active=True)
