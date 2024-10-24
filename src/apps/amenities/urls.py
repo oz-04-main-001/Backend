@@ -1,7 +1,7 @@
-# 20241023 수정
+# 20241024 수정
 from django.urls import path
 
-from apps.amenities.views import ameniites_views as views
+from apps.amenities.views import amenities_views as views
 
 app_name = "amenities"
 
