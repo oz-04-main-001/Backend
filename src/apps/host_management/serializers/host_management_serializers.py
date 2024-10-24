@@ -1,10 +1,11 @@
+from datetime import date, datetime
+
 from rest_framework import serializers
 
-from apps.accommodations.models import Accommodation
+from apps.accommodations.models import Accommodation, Accommodation_Image
 from apps.bookings.models import Booking
 from apps.common.choices import BOOKING_STATUS_CHOICES
 from apps.rooms.models import Room
-from apps.users.models import User
 
 
 class BookingSerializer(serializers.ModelSerializer):
@@ -18,8 +19,8 @@ class BookingSerializer(serializers.ModelSerializer):
             "id",
             "guest",
             "room",
-            "check_in_date",
-            "check_out_date",
+            "check_in_datetime",
+            "check_out_datetime",
             "total_price",
             "status",
             "request",
@@ -29,7 +30,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "room_name",
         ]
 
-    def validate_check_in_date(self, value):
+    def validate_check_in_datetime(self, value):
         """
         체크인 날짜가 과거가 아닌지 확인
         """
@@ -39,12 +40,12 @@ class BookingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("체크인 날짜는 과거일 수 없습니다.")
         return value
 
-    def validate_check_out_date(self, value):
+    def validate_check_out_datetime(self, value):
         """
         체크아웃 날짜가 체크인 날짜 이후인지 확인
         """
-        if "check_in_date" in self.initial_data:
-            check_in_date = self.initial_data["check_in_date"]
+        if "check_in_datetime" in self.initial_data:
+            check_in_date = self.initial_data["check_in_datetime"]
             if value <= check_in_date:
                 raise serializers.ValidationError("체크아웃 날짜는 체크인 날짜 이후여야 합니다.")
         return value
@@ -71,24 +72,6 @@ class BookingSerializer(serializers.ModelSerializer):
         """
         if value <= 0:
             raise serializers.ValidationError("게스트 수는 양수여야 합니다.")
-        return value
-
-
-class AccommodationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Accommodation
-        fields = ["host", "name", "phone_number", "description", "rules", "created_at", "updated_at"]
-
-    def validate_phone_number(self, value):
-        """
-        전화번호가 특정 형식을 따르는지 확인
-        """
-        import re
-
-        if not re.match(r"^\d{2,3}-\d{3,4}-\d{4}$", value):
-            raise serializers.ValidationError(
-                "유효하지 않은 전화번호 형식입니다. 02-123-4567 또는 010-1234-5678 형식을 사용하세요."
-            )
         return value
 
 
@@ -133,3 +116,96 @@ class RoomSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("가격은 양수여야 합니다.")
         return value
+
+
+class BookingCheckSerializer(serializers.Serializer):
+    date = serializers.DateField(required=False)
+
+    def validate(self, data: dict) -> dict:
+        check_date = data.get("date")
+        if not check_date:
+            raise serializers.ValidationError("날짜를 선택해 주세요.")
+
+        if check_date < date.today():
+            raise serializers.ValidationError("과거 날짜는 선택할 수 없습니다.")
+
+        # 예: 너무 먼 미래의 날짜 제한
+        max_future_days = 365
+        if (check_date - date.today()).days > max_future_days:
+            raise serializers.ValidationError(f"{max_future_days}일 이후의 날짜는 선택할 수 없습니다.")
+
+        return data
+
+
+class BookingRequestCheckSerializer(serializers.Serializer):
+    booking_id = serializers.IntegerField()
+    action = serializers.ChoiceField(choices=["accept", "cancelled"])
+
+    def validate_booking_id(self, booking_id: int) -> int:
+        try:
+            booking = Booking.objects.get(id=booking_id)
+            self.context["booking"] = booking
+        except Booking.DoesNotExist:
+            raise serializers.ValidationError("Invalid booking ID.")
+        return booking_id
+
+    def validate_action(self, action: str) -> str:
+        if action not in ["accept", "cancelled"]:
+            raise serializers.ValidationError("Invalid action.")
+        return action
+
+    def validate(self, data: dict) -> dict:
+        booking = self.context.get("booking")
+        user = self.context.get("request").user
+
+        if not booking:
+            raise serializers.ValidationError("Booking not found.")
+
+        if booking.status != "pending":
+            raise serializers.ValidationError("This booking is not in a pending state.")
+
+        if booking.room.accommodation.host != user.business_profile:
+            raise serializers.ValidationError("You don't have permission to modify this booking.")
+
+        return data
+
+
+class BookingStatisticsSerializer(serializers.Serializer):
+    date = serializers.DateField(required=False)
+
+    def validate_date(self, value):
+        """날짜 검증 로직을 추가할 수 있습니다."""
+        return value or date.today()
+
+
+class AccommodationImageSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Accommodation_Image
+        fields = ["id", "image", "image_url", "is_representative"]
+
+    def get_image_url(self, obj):
+        """이미지 URL을 반환합니다."""
+        request = self.context.get("request")
+        return request.build_absolute_uri(obj.image.url) if obj.image else None
+
+
+class AccommodationHostManagementSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Accommodation
+        fields = ["id", "name", "image", "address"]
+
+    def get_image(self, obj):
+        representative_image = obj.images.filter(is_representative=True).first()
+        return (
+            AccommodationImageSerializer(representative_image, context=self.context).data
+            if representative_image
+            else None
+        )
+
+    def get_address(self, obj):
+        return obj.gps_info.address if obj.gps_info else None  # GPS 정보가 없을 경우 None 반환

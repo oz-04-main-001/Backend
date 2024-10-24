@@ -122,13 +122,6 @@ class Command(BaseCommand):
     def generate_rooms(self, fake):
         print("Generating Rooms...")
         for accommodation in Accommodation.objects.all():
-            # 체크인 시간 생성 (예: 오후 2시에서 6시 사이)
-            check_in_hour = random.randint(14, 18)
-            check_in_time = timezone.make_aware(datetime.combine(datetime.now().date(), time(hour=check_in_hour)))
-
-            # 체크아웃 시간 생성 (예: 오전 10시에서 12시 사이)
-            check_out_hour = random.randint(10, 12)
-            check_out_time = timezone.make_aware(datetime.combine(datetime.now().date(), time(hour=check_out_hour)))
 
             room = Room.objects.create(
                 accommodation=accommodation,
@@ -138,8 +131,8 @@ class Command(BaseCommand):
                 price=random.randint(100, 1000),
                 stay_type=fake.boolean(),
                 description=fake.text(),
-                check_in_time=check_in_time,
-                check_out_time=check_out_time,
+                check_in_time=fake.time_object(),
+                check_out_time=fake.time_object(),
                 is_available=fake.boolean(),
             )
             RoomType.objects.create(room=room, is_customized=fake.boolean(), type_name=fake.word())
@@ -168,7 +161,7 @@ class Command(BaseCommand):
                     is_custom=is_custom,
                 )
                 AccommodationAmenity.objects.create(
-                    accommodation=accommodation, amenity=amenity, custom_value=fake.word()
+                    accommodation=accommodation, amenity=amenity, custom_value=random.randint(1, 5)
                 )
                 print(f"Amenity {amenity.name} created for {accommodation.name}")
 
@@ -183,6 +176,6 @@ class Command(BaseCommand):
                     option_name = fake.word()
                     is_custom = False
 
-                option = Option.objects.create(name=option_name, category=category, is_custom=is_custom)
+                option = Option.objects.create(name=option_name, category=category, custom_value=random.randint(1, 5))
                 RoomOption.objects.create(room=room, option=option, custom_value=fake.word())
                 print(f"Option {option.name} created for {room.name}")

@@ -8,17 +8,20 @@ VERIFICATION_STATUS_CHOICES = [
 ]
 
 BOOKING_STATUS_CHOICES = [
-    ("pending", "Pending"),
-    ("confirmed", "Confirmed"),
-    ("paid", "Paid"),
-    ("partially_paid", "Partially Paid"),
-    ("check_in", "Checked In"),
-    ("check_out", "Checked Out"),
-    ("cancelled_by_guest", "Cancelled by Guest"),
-    ("cancelled_by_host", "Cancelled by Host"),
-    ("no_show", "No Show"),
-    ("refunded", "Refunded"),
-    ("completed", "Completed"),
+    ("pending", "Pending"),  # 예약이 생성되었지만 아직 확정되지 않은 상태입니다. 결제나 승인이 필요할 수 있습니다.
+    ("confirmed", "Confirmed"),  # 예약이 확정된 상태입니다. 모든 필요한 조건이 충족되었고, 예약이 성사되었습니다.
+    ("paid", "Paid"),  # 예약 금액이 전액 결제된 상태입니다.
+    ("partially_paid", "Partially Paid"),  # 예약 금액 중 일부만 결제된 상태. 나머지 금액의 결제가 필요할 수 있습니다.
+    ("check_in", "Checked In"),  # 손님이 숙소에 체크인한 상태입니다.
+    ("check_out", "Checked Out"),  # 손님이 숙소에서 체크아웃한 상태입니다. 이용이 종료되었습니다.
+    ("cancelled_by_guest", "Cancelled by Guest"),  # 손님이 예약을 취소한 상태입니다.
+    ("cancelled_by_host", "Cancelled by Host"),  # 호스트가 예약을 취소한 상태입니다.
+    ("no_show", "No Show"),  # 손님이 예약된 날짜에 나타나지 않은 상태입니다. 체크인하지 않은 경우를 의미합니다.
+    ("refunded", "Refunded"),  # 예약이 취소되거나 기타 이유로 환불이 완료된 상태입니다.
+    (
+        "completed",
+        "Completed",
+    ),  # 이용이 완료된 상태입니다. 체크인, 체크아웃이 모두 끝난 상태로, 예약 과정이 정상적으로 마무리되었습니다.
 ]
 
 RATING_CHOICES = [

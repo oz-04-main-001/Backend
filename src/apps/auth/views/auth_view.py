@@ -174,7 +174,7 @@ class UserDeletionVerifyAPIView(GenericAPIView):
     permission_classes = [IsAuthenticated]
     user_auth_service = UserAuthService()
 
-    def delete(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
