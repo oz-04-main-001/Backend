@@ -1,10 +1,11 @@
+from datetime import datetime, date
+
 from rest_framework import serializers
 
 from apps.accommodations.models import Accommodation
 from apps.bookings.models import Booking
 from apps.common.choices import BOOKING_STATUS_CHOICES
 from apps.rooms.models import Room
-from apps.users.models import User
 
 
 class BookingSerializer(serializers.ModelSerializer):
@@ -133,3 +134,55 @@ class RoomSerializer(serializers.ModelSerializer):
         if value <= 0:
             raise serializers.ValidationError("가격은 양수여야 합니다.")
         return value
+
+
+class BookingCheckSerializer(serializers.Serializer):
+    date = serializers.DateField(required=False)
+
+    def validate(self, data: dict) -> dict:
+        check_date = data.get("date")
+        if not check_date:
+            raise serializers.ValidationError("날짜를 선택해 주세요.")
+
+        if check_date < date.today():
+            raise serializers.ValidationError("과거 날짜는 선택할 수 없습니다.")
+
+        # 예: 너무 먼 미래의 날짜 제한
+        max_future_days = 365
+        if (check_date - date.today()).days > max_future_days:
+            raise serializers.ValidationError(f"{max_future_days}일 이후의 날짜는 선택할 수 없습니다.")
+
+        return data
+
+
+class BookingRequestCheckSerializer(serializers.Serializer):
+    booking_id = serializers.IntegerField()
+    action = serializers.ChoiceField(choices=["accept", "cancelled"])
+
+    def validate_booking_id(self, booking_id: int) -> int:
+        try:
+            booking = Booking.objects.get(id=booking_id)
+            self.context["booking"] = booking
+        except Booking.DoesNotExist:
+            raise serializers.ValidationError("Invalid booking ID.")
+        return booking_id
+
+    def validate_action(self, action: str) -> str:
+        if action not in ["accept", "cancelled"]:
+            raise serializers.ValidationError("Invalid action.")
+        return action
+
+    def validate(self, data: dict) -> dict:
+        booking = self.context.get("booking")
+        user = self.context.get("request").user
+
+        if not booking:
+            raise serializers.ValidationError("Booking not found.")
+
+        if booking.status != "pending":
+            raise serializers.ValidationError("This booking is not in a pending state.")
+
+        if booking.room.accommodation.host != user.business_profile:
+            raise serializers.ValidationError("You don't have permission to modify this booking.")
+
+        return data
