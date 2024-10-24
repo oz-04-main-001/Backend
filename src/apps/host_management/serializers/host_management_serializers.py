@@ -18,8 +18,8 @@ class BookingSerializer(serializers.ModelSerializer):
             "id",
             "guest",
             "room",
-            "check_in_date",
-            "check_out_date",
+            "check_in_datetime",
+            "check_out_datetime",
             "total_price",
             "status",
             "request",
@@ -29,7 +29,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "room_name",
         ]
 
-    def validate_check_in_date(self, value):
+    def validate_check_in_datetime(self, value):
         """
         체크인 날짜가 과거가 아닌지 확인
         """
@@ -39,12 +39,12 @@ class BookingSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("체크인 날짜는 과거일 수 없습니다.")
         return value
 
-    def validate_check_out_date(self, value):
+    def validate_check_out_datetime(self, value):
         """
         체크아웃 날짜가 체크인 날짜 이후인지 확인
         """
-        if "check_in_date" in self.initial_data:
-            check_in_date = self.initial_data["check_in_date"]
+        if "check_in_datetime" in self.initial_data:
+            check_in_date = self.initial_data["check_in_datetime"]
             if value <= check_in_date:
                 raise serializers.ValidationError("체크아웃 날짜는 체크인 날짜 이후여야 합니다.")
         return value

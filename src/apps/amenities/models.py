@@ -17,7 +17,7 @@ class Amenity(models.Model):
 class AccommodationAmenity(models.Model):
     accommodation = models.ForeignKey(Accommodation, on_delete=models.CASCADE)
     amenity = models.ForeignKey(Amenity, on_delete=models.CASCADE)
-    custom_value = models.CharField(max_length=100, null=True, blank=True)
+    custom_value = models.IntegerField(default=1, null=True, blank=True)
 
     class Meta:
         unique_together = ("accommodation", "amenity")
@@ -32,7 +32,7 @@ class Option(models.Model):
 class RoomOption(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
     option = models.ForeignKey(Option, on_delete=models.CASCADE)
-    custom_value = models.CharField(max_length=100, null=True, blank=True)
+    custom_value = models.IntegerField(default=1, null=True, blank=True)
 
     class Meta:
         unique_together = ("room", "option")

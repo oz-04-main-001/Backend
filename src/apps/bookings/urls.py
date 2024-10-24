@@ -10,5 +10,5 @@ urlpatterns: list = [
         booking_guest_view.BookingRequestCreateView.as_view(),
         name="booking_request",
     ),
-    path("cancel/<int:booking_pk>/", booking_guest_view.BookingCancelView.as_view(), name="booking_cancel"),
+    path("cancel/<int:booking_id>/", booking_guest_view.BookingCancelView.as_view(), name="booking_cancel"),
 ]

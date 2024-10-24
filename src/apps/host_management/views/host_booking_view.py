@@ -27,7 +27,6 @@ class BookingCheckView(generics.GenericAPIView):
         호스트가 예약 내역을 관리하는 기능
         날짜의 값을 쿼리파라미터로 받아와야 함
         """
-
         host = request.user
 
         selected_date = self.request.query_params.get("date", None)

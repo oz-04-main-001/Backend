@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from apps.bookings.models import Booking
 from apps.users.models import User
 
@@ -7,8 +9,8 @@ class BookingService:
     def create_booking(data: dict, user: User):
         booking = Booking.objects.create(
             guest=user,
-            check_in_date=data["check_in_date"],
-            check_out_date=data["check_out_date"],
+            check_in_datetime=data["check_in_datetime"],
+            check_out_datetime=data["check_out_datetime"],
             guests_count=data["guests_count"],
             booker_name=data["booker_name"],
             booker_phone_number=data["booker_phone_number"],
@@ -25,8 +27,14 @@ class BookingService:
         return data
 
     @staticmethod
-    def check_overlapping_bookings(room, check_in_date, check_out_date):
-        return Booking.objects.overlapping(room, check_in_date, check_out_date)
+    def create_check_in_out_datetime(check_in_date: date, check_out_date: date, room) -> tuple:
+        check_in_datetime = datetime.combine(check_in_date, room.check_in_time)
+        check_out_datetime = datetime.combine(check_out_date, room.check_out_time)
+        return check_in_datetime, check_out_datetime
+
+    @staticmethod
+    def check_overlapping_bookings(room, check_in_datetime, check_out_datetime):
+        return Booking.objects.overlapping(room, check_in_datetime, check_out_datetime)
 
     @staticmethod
     def cancel_booking(booking_id: str):

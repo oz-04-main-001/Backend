@@ -241,15 +241,15 @@ DEFAULT_FROM_EMAIL = "webmaster@yourdomain.com"  # 발신자 기본 이메일
 
 
 # redis settings
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-    }
-}
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": "redis://redis:6379/1",
+#         "OPTIONS": {
+#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
+#         },
+#     }
+# }
 
 # 세션 설정 (선택 사항)
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"

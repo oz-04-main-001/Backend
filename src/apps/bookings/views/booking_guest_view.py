@@ -1,13 +1,13 @@
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.generics import RetrieveUpdateAPIView, GenericAPIView
+from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.bookings.models import Booking
 from apps.bookings.serializers.booking_guest_serializer import (
-    BookingReqeustCreateSerializer,
+    BookingRequestCreateSerializer,
 )
 from apps.bookings.services.booking_guest_service import BookingService
 
@@ -16,7 +16,7 @@ from apps.bookings.services.booking_guest_service import BookingService
 @extend_schema(tags=["Guest"])
 class BookingRequestCreateView(GenericAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = BookingReqeustCreateSerializer
+    serializer_class = BookingRequestCreateSerializer
     booking_service = BookingService()
 
     def post(self, request, accommodation_id, room_id, *args, **kwargs):
@@ -28,7 +28,7 @@ class BookingRequestCreateView(GenericAPIView):
 
         serializer = self.get_serializer(data=user_data)
         serializer.is_valid(raise_exception=True)
-
+        print(serializer.validated_data)
         self.booking_service.create_booking(serializer.validated_data, request.user)
 
         return Response({"message": "예약 완료"}, status=status.HTTP_201_CREATED)
@@ -39,7 +39,7 @@ class BookingCancelView(GenericAPIView):
     permission_classes = [IsAuthenticated]
     booking_service = BookingService()
 
-    def delete(self, request: Request, booking_id: int, *args, **kwargs) -> Response:
+    def patch(self, request: Request, booking_id: int, *args, **kwargs) -> Response:
         try:
             self.booking_service.cancel_booking(booking_id=booking_id)
 

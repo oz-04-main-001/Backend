@@ -11,8 +11,8 @@ from apps.users.models import User
 class Booking(models.Model):
     guest = models.ForeignKey(User, on_delete=models.CASCADE)
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    check_in_date = models.DateField()
-    check_out_date = models.DateField()
+    check_in_datetime = models.DateTimeField()
+    check_out_datetime = models.DateTimeField()
     total_price = models.PositiveIntegerField()
     status = models.CharField(max_length=30, choices=BOOKING_STATUS_CHOICES, default="pending")
     request = models.TextField(null=True, blank=True)
