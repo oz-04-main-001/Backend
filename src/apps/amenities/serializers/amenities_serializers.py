@@ -24,41 +24,60 @@ class AmenitySerializer(serializers.ModelSerializer):
         return value
 
 
-class AccommodationAmenitySerializer(serializers.ModelSerializer):
-    amenity = AmenitySerializer(read_only=True)
-    amenity_id = serializers.PrimaryKeyRelatedField(queryset=Amenity.objects.all(), write_only=True)
+# class AccommodationAmenitySerializer(serializers.ModelSerializer):
+#     amenity = AmenitySerializer(read_only=True)
+#     amenity_id = serializers.PrimaryKeyRelatedField(queryset=Amenity.objects.all(), write_only=True)
+#
+#     class Meta:
+#         model = AccommodationAmenity
+#         fields = ["id", "accommodation", "amenity", "amenity_id", "custom_value"]
+#
+#     def validate(self, data):
+#         # 커스텀 어메니티의 경우 custom_value가 필수
+#         if data.get("amenity_id").is_custom and not data.get("custom_value"):
+#             raise serializers.ValidationError({"custom_value": "Custom value is required for custom amenities"})
+#
+#         # 일반 어메니티의 경우 custom_value가 있으면 안됨
+#         if not data.get("amenity_id").is_custom and data.get("custom_value"):
+#             raise serializers.ValidationError(
+#                 {"custom_value": "Custom value should not be set for non-custom amenities"}
+#             )
+#
+#         return data
+#
+#     def create(self, validated_data):
+#         amenity = validated_data.pop("amenity_id")
+#         try:
+#             return AccommodationAmenity.objects.create(amenity=amenity, **validated_data)
+#         except Exception as e:
+#             raise serializers.ValidationError(f"Failed to create accommodation amenity: {str(e)}")
+#
+
+
+class AccommodationAmenityUpdateSerializer(serializers.ModelSerializer):
+    """숙소 부대시설 수정용 시리얼라이저"""
+
+    amenities = serializers.ListField(
+        child=serializers.DictField(),
+        write_only=True,
+    )
 
     class Meta:
         model = AccommodationAmenity
-        fields = ["id", "accommodation", "amenity", "amenity_id", "custom_value"]
+        fields = ["amenities"]
 
-    def validate(self, data):
-        # 커스텀 어메니티의 경우 custom_value가 필수
-        if data.get("amenity_id").is_custom and not data.get("custom_value"):
-            raise serializers.ValidationError({"custom_value": "Custom value is required for custom amenities"})
+    def validate_amenities(self, value):
+        if not value:
+            raise serializers.ValidationError("부대시설 정보는 필수입니다.")
 
-        # 일반 어메니티의 경우 custom_value가 있으면 안됨
-        if not data.get("amenity_id").is_custom and data.get("custom_value"):
-            raise serializers.ValidationError(
-                {"custom_value": "Custom value should not be set for non-custom amenities"}
-            )
+        for amenity in value:
+            if isinstance(amenity, dict):
+                if "id" not in amenity and "name" not in amenity:
+                    raise serializers.ValidationError("부대시설은 id(기존 시설) 또는 name(새로운 시설)이 필요합니다.")
+            elif not isinstance(amenity, (int, str)):
+                raise serializers.ValidationError("잘못된 부대시설 데이터 형식입니다.")
 
-        return data
-
-    def create(self, validated_data):
-        amenity = validated_data.pop("amenity_id")
-        try:
-            return AccommodationAmenity.objects.create(amenity=amenity, **validated_data)
-        except Exception as e:
-            raise serializers.ValidationError(f"Failed to create accommodation amenity: {str(e)}")
-
-
-class DetailedAccommodationAmenitySerializer(serializers.ModelSerializer):
-    amenity = AmenitySerializer(read_only=True)
-
-    class Meta:
-        model = AccommodationAmenity
-        fields = ["id", "amenity", "custom_value"]
+        return value
 
 
 class OptionSerializer(serializers.ModelSerializer):

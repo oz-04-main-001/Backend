@@ -17,10 +17,13 @@ from apps.accommodations.models import (
 )
 from apps.accommodations.serializers.accommodation_serializer import (
     AccommodationImageSerializer,
+    AccommodationImageUpdateSerializer,
     AccommodationSerializer,
     AccommodationTypeSerializer,
+    AccommodationUpdateSerializer,
     GPSInfoSerializer,
 )
+from apps.amenities.models import AccommodationAmenity, Amenity
 from apps.users.models import BusinessUser
 
 User = get_user_model()
@@ -28,6 +31,8 @@ User = get_user_model()
 
 class BaseAccommodationView:
     """기본 숙소 뷰 - 호스트 생성 로직"""
+
+    permission_classes = [AllowAny]
 
     def get_or_create_host(self):
         superuser = User.objects.filter(is_superuser=True).first()
@@ -58,19 +63,53 @@ class AccommodationListCreateView(BaseAccommodationView, generics.ListCreateAPIV
             raise ValidationError({"accommodation_type": "숙소 유형은 필수입니다."})
         if not request_data.get("gps_info"):
             raise ValidationError({"gps_info": "위치 정보는 필수입니다."})
+        if not request_data.get("amenities"):
+            raise ValidationError({"amenities": "부대시설 정보는 필수입니다."})
+
+    def process_accommodation_type(self, type_data):
+        """숙소 타입 처리 - 기존 타입 사용 또는 새 커스텀 타입 생성"""
+        if isinstance(type_data, dict):
+            # 새로운 커스텀 타입 생성
+            type_data["is_custom"] = True  # 커스텀 타입임을 표시
+            type_serializer = AccommodationTypeSerializer(data=type_data)
+            if type_serializer.is_valid():
+                return type_serializer.save()
+            raise ValidationError(type_serializer.errors)
+        else:
+            # 기존 타입 ID 사용
+            return get_object_or_404(AccommodationType, id=type_data)
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         self.validate_accommodation_data(request.data)
-        return super().create(request, *args, **kwargs)
 
-    @transaction.atomic
-    def perform_create(self, serializer):
+        # 1. 숙소 타입 처리 (커스텀 타입 지원)
+        accommodation_type = self.process_accommodation_type(request.data.get("accommodation_type"))
+
+        # 2. GPS 정보 처리
+        gps_info_data = request.data.get("gps_info")
+        gps_info_serializer = GPSInfoSerializer(data=gps_info_data)
+        if gps_info_serializer.is_valid():
+            gps_info = gps_info_serializer.save()
+        else:
+            raise ValidationError(gps_info_serializer.errors)
+
+        # 3. 숙소 생성
         host = self.get_or_create_host()
-        accommodation = serializer.save(host=host)
+        accommodation_data = {
+            **request.data,
+            "host": host.id,
+            "accommodationtype": accommodation_type.id,
+            "gps_info": gps_info.id,
+        }
+        accommodation_serializer = self.get_serializer(data=accommodation_data)
+        if accommodation_serializer.is_valid():
+            accommodation = accommodation_serializer.save()
+        else:
+            raise ValidationError(accommodation_serializer.errors)
 
-        # 이미지 처리 및 검증
-        images = self.request.FILES.getlist("images", [])
+        # 4. 이미지 처리
+        images = request.FILES.getlist("images", [])
         total_size = sum(image.size for image in images)
 
         if total_size > 50 * 1024 * 1024:  # 50MB
@@ -86,13 +125,27 @@ class AccommodationListCreateView(BaseAccommodationView, generics.ListCreateAPIV
         if image_instances:
             Accommodation_Image.objects.bulk_create(image_instances)
 
+        # 5. 부대시설 처리
+        amenities_data = request.data.get("amenities", [])
+        amenity_instances = []
+        for amenity_id in amenities_data:
+            amenity = get_object_or_404(Amenity, id=amenity_id)
+            amenity_instances.append(AccommodationAmenity(accommodation=accommodation, amenity=amenity))
+        if amenity_instances:
+            AccommodationAmenity.objects.bulk_create(amenity_instances)
 
-class AccommodationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+        return Response(accommodation_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class AccommodationRetrieveUpdateDestroyView(BaseAccommodationView, generics.RetrieveUpdateDestroyAPIView):
     """숙소 상세 조회, 수정, 삭제"""
 
     queryset = Accommodation.objects.all().select_related("accommodationtype", "gps_info").prefetch_related("images")
-    serializer_class = AccommodationSerializer
-    permission_classes = [AllowAny]
+
+    def get_serializer_class(self):
+        if self.request.method in ["PUT", "PATCH"]:
+            return AccommodationUpdateSerializer
+        return AccommodationSerializer
 
     def validate_update_data(self, request_data, partial=False):
         if not partial:
@@ -109,248 +162,89 @@ class AccommodationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVi
         self.validate_update_data(request.data, partial)
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-
         self.perform_update(serializer)
-
-        # 이미지 처리 및 검증
-        if "images" in request.FILES:
-            images = request.FILES.getlist("images")
-            total_size = sum(image.size for image in images)
-
-            if total_size > 50 * 1024 * 1024:
-                raise ValidationError({"images": "전체 이미지 크기가 50MB를 초과할 수 없습니다."})
-
-            image_instances = []
-            for image in images:
-                if not image.content_type.startswith("image/"):
-                    raise ValidationError({"images": f"{image.name}은(는) 유효한 이미지 파일이 아닙니다."})
-                if image.size > 10 * 1024 * 1024:
-                    raise ValidationError({"images": f"{image.name}의 크기가 10MB를 초과합니다."})
-                image_instances.append(Accommodation_Image(accommodation=instance, image=image))
-            Accommodation_Image.objects.bulk_create(image_instances)
 
         return Response(serializer.data)
 
     @transaction.atomic
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        instance.images.all().delete()  # 연관된 이미지 파일도 삭제
+        instance.images.all().delete()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class AccommodationSearchView(generics.ListAPIView):
-    """숙소 검색"""
+# 이미지 관리
+class AccommodationImageView(BaseAccommodationView, generics.ListCreateAPIView, generics.DestroyAPIView):
+    """숙소 이미지 관리"""
 
-    serializer_class = AccommodationSerializer
-    permission_classes = [AllowAny]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["name", "description", "gps_info__city", "gps_info__states", "accommodationtype__type_name"]
-
-    def get_queryset(self):
-        queryset = (
-            Accommodation.objects.all().select_related("accommodationtype", "gps_info").prefetch_related("images")
-        )
-
-        min_rating = self.request.query_params.get("min_rating")
-        accommodation_type = self.request.query_params.get("type")
-
-        if min_rating:
-            try:
-                min_rating = float(min_rating)
-                if not (0 <= min_rating <= 5):
-                    raise ValidationError({"min_rating": "평점은 0에서 5 사이의 값이어야 합니다."})
-                queryset = queryset.filter(average_rating__gte=min_rating)
-            except ValueError:
-                raise ValidationError({"min_rating": "유효한 숫자를 입력해주세요."})
-
-        if accommodation_type:
-            queryset = queryset.filter(accommodationtype__type_name=accommodation_type)
-
-        return queryset
-
-
-class AccommodationsByLocationView(generics.ListAPIView):
-    """위치 기반 숙소 검색"""
-
-    serializer_class = AccommodationSerializer
-    permission_classes = [AllowAny]
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return AccommodationImageUpdateSerializer
+        return AccommodationImageSerializer  # GET 요청시 기본 시리얼라이저 사용
 
     def get_queryset(self):
-        city = self.kwargs.get("city")
-        state = self.kwargs.get("state")
+        return Accommodation_Image.objects.filter(accommodation_id=self.kwargs["pk"])
 
-        if not city and not state:
-            raise ValidationError({"error": "도시 또는 주/도를 입력해주세요."})
+    def get_object(self):
+        # DestroyAPIView에서 사용
+        accommodation = get_object_or_404(Accommodation, pk=self.kwargs["pk"])
+        return accommodation
 
-        return (
-            Accommodation.objects.filter(Q(gps_info__city__icontains=city) | Q(gps_info__states__icontains=state))
-            .select_related("accommodationtype", "gps_info")
-            .prefetch_related("images")
-        )
-
-
-class AccommodationBulkCreateView(BaseAccommodationView, APIView):
-    """여러 숙소 동시 생성"""
-
-    permission_classes = [AllowAny]
-
-    @transaction.atomic
-    def post(self, request):
-        accommodations_data = request.data.get("accommodations", [])
-
-        if not accommodations_data:
-            raise ValidationError({"error": "생성할 숙소 데이터가 없습니다."})
-
-        if len(accommodations_data) > 10:  # 최대 생성 개수 제한
-            raise ValidationError({"error": "한 번에 최대 10개의 숙소만 생성할 수 있습니다."})
-
-        created_accommodations = []
-        host = self.get_or_create_host()
-
-        for data in accommodations_data:
-            serializer = AccommodationSerializer(data=data)
-            if serializer.is_valid():
-                accommodation = serializer.save(host=host)
-                created_accommodations.append(serializer.data)
-            else:
-                raise ValidationError(serializer.errors)
-
-        return Response(created_accommodations, status=status.HTTP_201_CREATED)
-
-
-class AccommodationTypeListCreateView(generics.ListCreateAPIView):
-    """숙소 타입 목록 조회 및 생성"""
-
-    queryset = AccommodationType.objects.all()
-    serializer_class = AccommodationTypeSerializer
-    permission_classes = [AllowAny]
-
-    def create(self, request, *args, **kwargs):
-        if not request.data.get("type_name"):
-            raise ValidationError({"type_name": "숙소 유형 이름은 필수입니다."})
-        return super().create(request, *args, **kwargs)
-
-
-class AccommodationTypeRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    """숙소 타입 상세 조회, 수정, 삭제"""
-
-    queryset = AccommodationType.objects.all()
-    serializer_class = AccommodationTypeSerializer
-    permission_classes = [AllowAny]
-
-    def update(self, request, *args, **kwargs):
-        if not request.data.get("type_name"):
-            raise ValidationError({"type_name": "숙소 유형 이름은 필수입니다."})
-        return super().update(request, *args, **kwargs)
-
-
-class AccommodationTypeCustomCreateView(APIView):
-    """사용자 정의 숙소 타입 생성"""
-
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        if not request.data.get("type_name"):
-            raise ValidationError({"type_name": "숙소 유형 이름은 필수입니다."})
-
-        data = request.data.copy()
-        data["is_customized"] = True
-        serializer = AccommodationTypeSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class AccommodationTypeStatisticsView(APIView):
-    """숙소 타입별 통계"""
-
-    permission_classes = [AllowAny]
-
-    def get(self, request):
-        statistics = {}
-        accommodation_types = AccommodationType.objects.all()
-
-        if not accommodation_types.exists():
-            return Response({"message": "등록된 숙소 유형이 없습니다."})
-
-        for acc_type in accommodation_types:
-            accommodations = Accommodation.objects.filter(accommodationtype__type_name=acc_type.type_name)
-            statistics[acc_type.type_name] = {
-                "total_accommodations": accommodations.count(),
-                "average_rating": accommodations.aggregate(Avg("average_rating"))["average_rating__avg"] or 0.0,
-            }
-        return Response(statistics)
-
-
-class AccommodationImageListCreateView(generics.ListCreateAPIView):
-    """숙소 이미지 목록 조회 및 생성"""
-
-    queryset = Accommodation_Image.objects.all()
-    serializer_class = AccommodationImageSerializer
-    permission_classes = [AllowAny]
-
-    def create(self, request, *args, **kwargs):
-        if "image" not in request.FILES:
-            raise ValidationError({"image": "이미지 파일은 필수입니다."})
-        return super().create(request, *args, **kwargs)
-
-
-class AccommodationImageRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    """숙소 이미지 상세 조회, 수정, 삭제"""
-
-    queryset = Accommodation_Image.objects.all()
-    serializer_class = AccommodationImageSerializer
-    permission_classes = [AllowAny]
-
-
-class AccommodationImageBulkUploadView(generics.CreateAPIView):
-    """여러 이미지 동시 업로드"""
-
-    serializer_class = AccommodationImageSerializer
-    permission_classes = [AllowAny]
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = AccommodationImageSerializer(queryset, many=True)  # 조회시에는 기본 시리얼라이저
+        return Response(serializer.data)
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        accommodation_id = kwargs.get("accommodation_id")
-        accommodation = get_object_or_404(Accommodation, id=accommodation_id)
+        accommodation = get_object_or_404(Accommodation, pk=self.kwargs["pk"])
 
-        images = request.FILES.getlist("images", [])
-        if not images:
-            raise ValidationError({"error": "업로드할 이미지가 없습니다."})
+        # 이미지 처리 및 검증
+        if "images" not in request.FILES:
+            raise ValidationError({"images": "이미지 파일은 필수입니다."})
 
-        if len(images) > 10:
-            raise ValidationError({"error": "한 번에 최대 10개의 이미지만 업로드할 수 있습니다."})
-
+        images = request.FILES.getlist("images")
         total_size = sum(image.size for image in images)
-        if total_size > 50 * 1024 * 1024:  # 50MB
-            raise ValidationError({"error": "전체 이미지 크기가 50MB를 초과할 수 없습니다."})
 
+        if total_size > 50 * 1024 * 1024:
+            raise ValidationError({"images": "전체 이미지 크기가 50MB를 초과할 수 없습니다."})
+
+        # 기존 이미지 삭제 여부 확인
+        if request.data.get("delete_existing", "").lower() == "true":
+            accommodation.images.all().delete()
+
+        # 새 이미지 추가
         image_instances = []
         for image in images:
-            if not image.content_type.startswith("image/"):
-                raise ValidationError({"error": f"{image.name}은(는) 유효한 이미지 파일이 아닙니다."})
+            serializer = AccommodationImageUpdateSerializer(data={"image": image})
+            if serializer.is_valid(raise_exception=True):
+                image_instances.append(Accommodation_Image(accommodation=accommodation, image=image))
 
-            if image.size > 10 * 1024 * 1024:  # 10MB
-                raise ValidationError({"error": f"{image.name}의 크기가 10MB를 초과합니다."})
+        created_images = Accommodation_Image.objects.bulk_create(image_instances)
+        response_serializer = AccommodationImageSerializer(created_images, many=True)
 
-            image_instances.append(Accommodation_Image(accommodation=accommodation, image=image))
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
-            created_images = Accommodation_Image.objects.bulk_create(image_instances)
-            return Response(self.get_serializer(created_images, many=True).data, status=status.HTTP_201_CREATED)
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        accommodation = self.get_object()
+        accommodation.images.all().delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class GPSInfoRetrieveUpdateView(generics.RetrieveUpdateAPIView):
+# GPS 정보 관리
+class GPSInfoView(BaseAccommodationView, generics.RetrieveUpdateAPIView):
     """GPS 정보 조회 및 수정"""
 
     serializer_class = GPSInfoSerializer
-    permission_classes = [AllowAny]
+    queryset = Accommodation.objects.all().select_related("gps_info")
 
     def get_object(self):
-        accommodation_id = self.kwargs.get("accommodation_id")
-        return get_object_or_404(GPS_Info, accommodation_id=accommodation_id)
+        accommodation = get_object_or_404(Accommodation, id=self.kwargs.get("accommodation_id"))
+        return accommodation.gps_info
 
+    @transaction.atomic
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)
         instance = self.get_object()
@@ -364,7 +258,6 @@ class GPSInfoRetrieveUpdateView(generics.RetrieveUpdateAPIView):
                     raise ValidationError({"location": "올바른 좌표 형식이 아닙니다."})
 
                 longitude, latitude = coordinates
-
                 if not (-90 <= latitude <= 90):
                     raise ValidationError({"location": "위도는 -90에서 90 사이의 값이어야 합니다."})
                 if not (-180 <= longitude <= 180):
@@ -388,3 +281,22 @@ class GPSInfoRetrieveUpdateView(generics.RetrieveUpdateAPIView):
         self.perform_update(serializer)
 
         return Response(serializer.data)
+
+
+# 숙소 타입 관리
+# class AccommodationTypeView(BaseAccommodationView, generics.RetrieveUpdateAPIView):
+#     """숙소 타입 정보 조회 및 수정"""
+#     serializer_class = AccommodationTypeSerializer
+#     queryset = Accommodation.objects.all().select_related("accommodationtype")
+#
+#     def get_object(self):
+#         accommodation = get_object_or_404(Accommodation, id=self.kwargs['pk'])
+#         return accommodation.accommodationtype
+#
+#     @transaction.atomic
+#     def update(self, request, *args, **kwargs):
+#         instance = self.get_object()
+#         serializer = self.get_serializer(instance, data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         self.perform_update(serializer)
+#         return Response(serializer.data)
