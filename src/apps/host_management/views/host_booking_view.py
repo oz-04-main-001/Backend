@@ -64,9 +64,11 @@ class BookingRequestCheckView(generics.GenericAPIView):
         클라이언트로가 patch요청을 보내면 요청 데이터로 부터 전송된 action이라는 키를 가져와야 함
         action의 값에 따라 booking.status의 값으로 반환함
         """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         booking = self.get_object()
-        action = request.data.get("action")
+        action = serializer.validated_data.get("action")
 
         if action == "accept":
             booking.status = "confirmed"
@@ -118,10 +120,11 @@ class MyAccommodationsUpdateView(generics.GenericAPIView):
 
         # 숙소 정보 수정 시 일부 필드만 수정할 수 있도록 설정
         serializer = self.get_serializer(accommodation, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+
+        # 데이터가 유효하면 저장
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["Host"])
@@ -129,7 +132,6 @@ class MyAccommodationsDeleteView(generics.GenericAPIView):
     """숙소 삭제"""
     permission_classes = [IsAuthenticated]
     serializer_class = AccommodationSerializer
-    queryset = Accommodation.objects.all()
 
     def delete(self, request, *args, **kwargs):
         """
@@ -142,7 +144,7 @@ class MyAccommodationsDeleteView(generics.GenericAPIView):
             return Response({"detail": "숙소를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         accommodation.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "숙소가 성공적으로 삭제되었습니다."}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["Host"])
@@ -164,10 +166,11 @@ class MyRoomsUpdateView(generics.GenericAPIView):
 
         # 객실 정보 수정 시 일부 필드만 수정할 수 있도록 설정
         serializer = self.get_serializer(room, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+
+        # 데이터가 유효하면 저장
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["Host"])
@@ -175,7 +178,6 @@ class MyRoomsDeleteView(generics.GenericAPIView):
     """객실 삭제"""
     permission_classes = [IsAuthenticated]
     serializer_class = RoomSerializer
-    queryset = Room.objects.all()
 
     def delete(self, request, *args, **kwargs):
         """
@@ -188,7 +190,7 @@ class MyRoomsDeleteView(generics.GenericAPIView):
             return Response({"detail": "객실을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         room.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "객실이 성공적으로 삭제되었습니다."}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["Host"])
