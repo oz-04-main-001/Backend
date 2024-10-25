@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from apps.accommodations.models import Accommodation
 from apps.amenities.models import Option, RoomOption
 from apps.rooms.models import Room, Room_Image, RoomInventory, RoomType
@@ -53,7 +54,17 @@ class RoomSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Room
-        fields = ["id", "name", "capacity", "max_capacity", "description", "price", "check_in_time", "check_out_time", "bed_info"]
+        fields = [
+            "id",
+            "name",
+            "capacity",
+            "max_capacity",
+            "description",
+            "price",
+            "check_in_time",
+            "check_out_time",
+            "bed_info",
+        ]
 
     def get_bed_info(self, obj):
         bed_options = RoomOption.objects.filter(room=obj.id, option__category="bed")
@@ -61,12 +72,12 @@ class RoomSerializer(serializers.ModelSerializer):
         bed_names = list(set(option.option.name for option in bed_options))
         return {"total_beds": bed_count, "bed_names": bed_names}
 
+
 class RoomDetailSerializer(RoomSerializer):
     room = serializers.SerializerMethodField()
     accommodation_name = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     room_options = serializers.SerializerMethodField()
-
 
     class Meta:
         model = Room
@@ -85,5 +96,3 @@ class RoomDetailSerializer(RoomSerializer):
     def get_room_options(self, obj):
         options = RoomOption.objects.filter(room=obj.id)
         return RoomRoomOptionSerializer(options, many=True).data
-
-
