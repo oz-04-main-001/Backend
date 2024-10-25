@@ -2,7 +2,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import AllowAny
 
-from apps.pages.serializers.room_serializer import RoomSerializer
+from apps.pages.serializers.room_serializer import RoomDetailSerializer
 from apps.rooms.models import Room
 
 
@@ -10,4 +10,4 @@ from apps.rooms.models import Room
 class RoomDetailView(RetrieveAPIView):
     permission_classes = (AllowAny,)
     queryset = Room.objects.all()
-    serializer_class = RoomSerializer
+    serializer_class = RoomDetailSerializer

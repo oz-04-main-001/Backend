@@ -1,0 +1,182 @@
+from typing import Union
+from rest_framework import serializers
+from apps.accommodations.models import (
+    Accommodation,
+    Accommodation_Image,
+    GPS_Info,
+    RefundPolicy,
+)
+from apps.amenities.models import AccommodationAmenity, Amenity
+from apps.pages.serializers.room_serializer import RoomImagesSerializer, RoomSerializer
+from apps.rooms.models import Room, Room_Image
+
+
+# 호텔 주소 시리얼라이저
+class AccommodationAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GPS_Info
+        fields = [
+            "city",
+            "states",
+            "road_name",
+            "address",
+        ]
+
+
+# 호텔 이미지 시리얼라이저
+class AccommodationImgSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Accommodation_Image
+        fields = ["image"]
+
+
+# 부대시설 시리얼라이저
+class AmenitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Amenity
+        fields = [
+            'name',
+            'category',
+            'description',
+            'icon',
+            'is_custom',
+        ]
+
+
+# 호텔단위 부대시설 시리얼라이저
+class AccommodationAmenitySerializer(serializers.ModelSerializer):
+    amenity = AmenitySerializer()   # 부대시설 정보 포함
+    class Meta:
+        model = AccommodationAmenity
+        fields = [
+            'amenity'
+        ]
+
+
+# 호텔 환불정책
+class AccommodationRefundPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefundPolicy
+        fields = [
+            "seven_days_before",
+            "five_days_before",
+            "three_days_before",
+            "one_day_before",
+            "same_day"
+        ]
+
+# 호텔 기본 정보 - 이름, 전화번호, 상세내용, 이용수칙
+class AccommodationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Accommodation
+        fields = [
+            "name",
+            "phone_number",
+            "description",
+            "rules"
+        ]
+
+
+
+
+# ######################################
+# 룸 -> 객실정보(기준인원, 침대싸이즈, 침대갯수, 방갯수)
+
+
+
+class AccommodationDetailSerializer(serializers.ModelSerializer):
+    accommodation_info = serializers.SerializerMethodField()
+    accommodation_img = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+    min_price = serializers.SerializerMethodField()
+    rooms = serializers.SerializerMethodField()
+    refund_policy = serializers.SerializerMethodField()
+    accommodation_amenity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Accommodation
+
+        fields = [
+            "accommodation_img",
+            "accommodation_info",
+            "address",
+            "min_price",
+            "rooms",
+            'accommodation_amenity',
+            "refund_policy"
+        ]
+        # exclude = ['id', 'created_at', 'updated_at', 'is_active', 'average_rating']
+
+
+    # 숙소 기본정보
+    def get_accommodation_info(self, obj):
+        accommodation = Accommodation.objects.get(pk=obj.id)
+        serializer = AccommodationSerializer(accommodation)
+        return serializer.data
+
+    # 숙소 이미지들
+    def get_accommodation_img(self, obj: Accommodation) -> Union[str, None]:
+        imgs = Accommodation_Image.objects.filter(accommodation_id=obj.pk)
+        if imgs:
+            img_list = []
+            for img in imgs:
+                img_list.append(img.image.name)
+            return img_list  # 이객체의 image필드의 값을 반환(클라우드 url주소 예정)
+
+        return None  # img가 없다면 None 반환
+
+    # 숙소 주소
+    def get_address(self, obj):
+        gps_info = GPS_Info.objects.filter(accommodation=obj)
+        serializer = AccommodationAddressSerializer(gps_info, many=True)
+        address_data = serializer.data[0] if serializer.data else None
+        address_full = (
+            f"{address_data['city']} {address_data['states']} {address_data['road_name']} {address_data['address']}"
+        )
+        return address_full
+    # 최저가
+    def get_min_price(self, obj):
+        min_price = obj.room_set.order_by("price").first()
+        if min_price:
+            return min_price.price
+        return None
+
+    # 룸정보 + 룸대표이미지
+    def get_rooms(self, obj):
+        rooms = Room.objects.filter(accommodation=obj)
+        room_list = []
+
+        for room in rooms:
+            room_serializer = RoomSerializer(room)
+            room_dict = room_serializer.data
+
+            # 현재 room에 해당하는 이미지들을 가져옵니다.
+            room_images = Room_Image.objects.filter(room_id=room.id)
+
+            # 대표 이미지가 담길 변수
+            representative_image = None
+
+            # room에 대한 이미지를 순회하며 대표 이미지를 찾습니다.
+            for image in room_images:
+                if image.is_representative:
+                    representative_image = image.image.name
+                    break  # 대표 이미지를 찾으면 더 이상 순회하지 않음
+
+            # 직렬화된 데이터에 'images' 필드로 대표 이미지를 추가
+            room_dict["images"] = representative_image
+
+            # 각 room의 데이터를 room_list에 추가
+            room_list.append(room_dict)
+
+        # room_list에는 각 room의 대표 이미지가 포함됨
+        return room_list
+
+    def get_accommodation_amenity(self, obj):
+        accommodation_amenities = AccommodationAmenity.objects.filter(accommodation=obj)
+        serializer = AccommodationAmenitySerializer(accommodation_amenities, many=True)
+        return serializer.data
+
+    def get_refund_policy(self, obj):
+        refund_policy = RefundPolicy.objects.filter(accommodation=obj)
+        refund_policy_serializer = AccommodationRefundPolicySerializer(refund_policy, many=True)
+        return refund_policy_serializer.data
