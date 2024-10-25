@@ -6,6 +6,7 @@ from apps.accommodations.models import (
     Accommodation_Image,
     AccommodationType,
     GPS_Info,
+    RefundPolicy,
 )
 from apps.amenities.models import AccommodationAmenity, Amenity
 from apps.amenities.serializers.amenities_serializers import (
@@ -73,6 +74,25 @@ class AccommodationImageSerializer(serializers.ModelSerializer):
         return None
 
 
+class RefundPolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RefundPolicy
+        fields = ["seven_days_before", "five_days_before", "three_days_before", "one_day_before", "same_day"]
+        extra_kwargs = {
+            "seven_days_before": {"required": True},
+            "five_days_before": {"required": True},
+            "three_days_before": {"required": True},
+            "one_day_before": {"required": True},
+            "same_day": {"required": True},
+        }
+
+    def validate(self, data):
+        for field, value in data.items():
+            if value < 0 or value > 100:
+                raise serializers.ValidationError(f"{field}: 환불 비율은 0에서 100 사이여야 합니다.")
+        return data
+
+
 class AccommodationSerializer(serializers.ModelSerializer):
     accommodation_type = AccommodationTypeSerializer(source="accommodationtype")
     images = AccommodationImageSerializer(many=True, read_only=True)
@@ -89,6 +109,8 @@ class AccommodationSerializer(serializers.ModelSerializer):
     accommodation_amenities = AccommodationAmenityUpdateSerializer(
         source="accommodationamenity_set", many=True, read_only=True
     )
+    refund_policies = RefundPolicySerializer(many=True, read_only=True)
+    refund_policy = RefundPolicySerializer(write_only=True, required=True)
 
     class Meta:
         model = Accommodation
@@ -110,6 +132,8 @@ class AccommodationSerializer(serializers.ModelSerializer):
             "amenities",  # 기존 부대시설 선택용
             "custom_amenities",  # 커스텀 부대시설 생성용
             "accommodation_amenities",  # 조회용
+            "refund_policies",
+            "refund_policy",
         ]
         read_only_fields = ["id", "host", "average_rating", "created_at", "updated_at"]
 
@@ -154,7 +178,8 @@ class AccommodationSerializer(serializers.ModelSerializer):
         upload_images = validated_data.pop("upload_images", [])
         amenities_data = validated_data.pop("amenities", [])
         custom_amenities_data = validated_data.pop("custom_amenities", [])
-
+        # refund_policy_data = validated_data.pop('refund_policies')
+        refund_policy_data = validated_data.pop("refund_policy")
         # 기본 숙소 생성
         accommodation = Accommodation.objects.create(**validated_data)
 
@@ -186,6 +211,8 @@ class AccommodationSerializer(serializers.ModelSerializer):
                 accommodation=accommodation, amenity=amenity, custom_value=amenity_data.get("custom_value", "")
             )
 
+        # accommodation = super().create(validated_data)
+        RefundPolicy.objects.create(accommodation=accommodation, **refund_policy_data)
         return accommodation
 
 

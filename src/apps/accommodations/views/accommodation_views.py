@@ -14,6 +14,7 @@ from apps.accommodations.models import (
     Accommodation_Image,
     AccommodationType,
     GPS_Info,
+    RefundPolicy,
 )
 from apps.accommodations.serializers.accommodation_serializer import (
     AccommodationImageSerializer,
@@ -22,6 +23,7 @@ from apps.accommodations.serializers.accommodation_serializer import (
     AccommodationTypeSerializer,
     AccommodationUpdateSerializer,
     GPSInfoSerializer,
+    RefundPolicySerializer,
 )
 from apps.amenities.models import AccommodationAmenity, Amenity
 from apps.users.models import BusinessUser
@@ -52,7 +54,7 @@ class AccommodationListCreateView(BaseAccommodationView, generics.ListCreateAPIV
 
     queryset = Accommodation.objects.all().select_related("accommodationtype", "gps_info").prefetch_related("images")
     serializer_class = AccommodationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny]  # [isauthentication, ishost]
 
     def validate_accommodation_data(self, request_data):
         if not request_data.get("name"):
@@ -96,6 +98,7 @@ class AccommodationListCreateView(BaseAccommodationView, generics.ListCreateAPIV
 
         # 3. 숙소 생성
         host = self.get_or_create_host()
+        # host = request.user.business_profile
         accommodation_data = {
             **request.data,
             "host": host.id,
@@ -281,6 +284,21 @@ class GPSInfoView(BaseAccommodationView, generics.RetrieveUpdateAPIView):
         self.perform_update(serializer)
 
         return Response(serializer.data)
+
+
+# views.py에 추가
+class RefundPolicyView(generics.RetrieveUpdateDestroyAPIView):
+    """환불 정책 조회, 수정, 삭제"""
+
+    serializer_class = RefundPolicySerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return RefundPolicy.objects.filter(accommodation_id=self.kwargs["accommodation_id"])
+
+    def get_object(self):
+        accommodation_id = self.kwargs["accommodation_id"]
+        return get_object_or_404(RefundPolicy, accommodation_id=accommodation_id)
 
 
 # 숙소 타입 관리

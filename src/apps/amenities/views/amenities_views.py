@@ -14,7 +14,9 @@ from apps.amenities.serializers.amenities_serializers import (
     DetailedRoomOptionSerializer,
     OptionSerializer,
     RoomOptionSerializer,
+    RoomOptionUpdateSerializer,
 )
+from apps.rooms.models import Room
 
 
 # Amenity views
@@ -124,104 +126,86 @@ class AccommodationAmenityView(generics.RetrieveUpdateDestroyAPIView):
 
 # Option views
 @extend_schema(tags=["Host"])
-class OptionListCreateView(generics.ListCreateAPIView):
+class OptionListView(generics.ListAPIView):
     queryset = Option.objects.all()
     serializer_class = OptionSerializer
     permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
-        try:
-            serializer.save(is_custom=True)
-        except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, *args, **kwargs)
-        except IntegrityError:
-            return Response({"detail": "An option with this name already exists"}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @extend_schema(tags=["Host"])
-class OptionDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Option.objects.all()
+class RoomOptionView(generics.RetrieveUpdateDestroyAPIView):
+    """룸별 옵션 조회, 수정, 삭제"""
+
+    permission_classes = [AllowAny]
     serializer_class = OptionSerializer
-    permission_classes = [AllowAny]
-
-    def perform_destroy(self, instance):
-        if instance.roomoption_set.exists():
-            raise ValidationError("Cannot delete option that is in use")
-        instance.delete()
-
-    def destroy(self, request, *args, **kwargs):
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-# RoomOption views
-@extend_schema(tags=["Host"])
-class RoomOptionListCreateView(generics.ListCreateAPIView):
-    serializer_class = RoomOptionSerializer
-    permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return RoomOption.objects.filter(room_id=self.kwargs["room_id"])
-
-    def perform_create(self, serializer):
-        try:
-            serializer.save(room_id=self.kwargs["room_id"])
-        except IntegrityError:
-            raise ValidationError("This option is already added to the room")
-
-    def create(self, request, *args, **kwargs):
-        try:
-            return super().create(request, *args, **kwargs)
-        except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@extend_schema(tags=["Host"])
-class RoomOptionDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = RoomOptionSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return RoomOption.objects.filter(room_id=self.kwargs["room_id"])
+        return Option.objects.filter(roomoption__room_id=self.kwargs["room_id"])
 
     def get_object(self):
-        queryset = self.get_queryset()
-        obj = get_object_or_404(queryset, pk=self.kwargs["pk"])
-        self.check_object_permissions(self.request, obj)
-        return obj
-
-
-@extend_schema(tags=["Host"])
-class DetailedRoomOptionListView(generics.ListAPIView):
-    serializer_class = DetailedRoomOptionSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
         room_id = self.kwargs["room_id"]
-        return RoomOption.objects.filter(room_id=room_id).select_related("option")
+        get_object_or_404(Room, id=room_id)  # 방이 존재하는지 확인
+        return Option.objects.filter(roomoption__room_id=room_id)
+
+    def retrieve(self, request, *args, **kwargs):
+        """옵션 조회"""
+        options = self.get_object()
+        serializer = self.get_serializer(options, many=True)
+        return Response(serializer.data)
+
+    @transaction.atomic
+    def update(self, request, *args, **kwargs):
+        """옵션 수정"""
+        room_id = self.kwargs["room_id"]
+        room = get_object_or_404(Room, id=room_id)
+
+        options_data = request.data.get("options", [])
+        if not options_data:
+            raise ValidationError({"options": "옵션 정보는 필수입니다."})
+
+        # 기존 옵션 관계 삭제
+        RoomOption.objects.filter(room=room).delete()
+
+        # 새로운 옵션 생성 및 연결
+        for option_data in options_data:
+            if isinstance(option_data, dict):
+                # 새로운 커스텀 옵션 생성
+                option = Option.objects.create(
+                    name=option_data["name"], category=option_data.get("category", "extra"), is_custom=True
+                )
+            else:
+                # 기존 옵션 연결
+                option = get_object_or_404(Option, id=option_data)
+
+            RoomOption.objects.create(room=room, option=option)
+
+        # 수정된 옵션 목록 반환
+        updated_options = self.get_queryset()
+        serializer = self.get_serializer(updated_options, many=True)
+        return Response(serializer.data)
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        """옵션 삭제"""
+        room_id = self.kwargs["room_id"]
+        room = get_object_or_404(Room, id=room_id)
+
+        # 특정 옵션만 삭제하는 경우
+        option_ids = request.query_params.getlist("option_ids", [])
+        if option_ids:
+            try:
+                option_ids = [int(id) for id in option_ids]
+                RoomOption.objects.filter(room=room, option_id__in=option_ids).delete()
+            except ValueError:
+                raise ValidationError({"detail": "잘못된 옵션 ID 형식입니다."})
+        else:
+            # 모든 옵션 삭제
+            RoomOption.objects.filter(room=room).delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # Custom views
-@extend_schema(tags=["Host"])
-class CustomAmenityListView(generics.ListAPIView):
-    serializer_class = AmenitySerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            return Amenity.objects.filter(is_custom=True)
-
-        return Amenity.objects.filter(
-            is_custom=True, accommodationamenity__accommodation__host=self.request.user
-        ).distinct()
-
-
 @extend_schema(tags=["Host"])
 class CustomOptionListView(generics.ListAPIView):
     serializer_class = OptionSerializer
