@@ -1,5 +1,7 @@
 from typing import Union
+
 from rest_framework import serializers
+
 from apps.accommodations.models import (
     Accommodation,
     Accommodation_Image,
@@ -35,53 +37,39 @@ class AmenitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Amenity
         fields = [
-            'name',
-            'category',
-            'description',
-            'icon',
-            'is_custom',
+            "name",
+            "category",
+            "description",
+            "icon",
+            "is_custom",
         ]
 
 
 # 호텔단위 부대시설 시리얼라이저
 class AccommodationAmenitySerializer(serializers.ModelSerializer):
-    amenity = AmenitySerializer()   # 부대시설 정보 포함
+    amenity = AmenitySerializer()  # 부대시설 정보 포함
+
     class Meta:
         model = AccommodationAmenity
-        fields = [
-            'amenity'
-        ]
+        fields = ["amenity"]
 
 
 # 호텔 환불정책
 class AccommodationRefundPolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = RefundPolicy
-        fields = [
-            "seven_days_before",
-            "five_days_before",
-            "three_days_before",
-            "one_day_before",
-            "same_day"
-        ]
+        fields = ["seven_days_before", "five_days_before", "three_days_before", "one_day_before", "same_day"]
+
 
 # 호텔 기본 정보 - 이름, 전화번호, 상세내용, 이용수칙
 class AccommodationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accommodation
-        fields = [
-            "name",
-            "phone_number",
-            "description",
-            "rules"
-        ]
-
-
+        fields = ["name", "phone_number", "description", "rules"]
 
 
 # ######################################
 # 룸 -> 객실정보(기준인원, 침대싸이즈, 침대갯수, 방갯수)
-
 
 
 class AccommodationDetailSerializer(serializers.ModelSerializer):
@@ -102,11 +90,10 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             "address",
             "min_price",
             "rooms",
-            'accommodation_amenity',
-            "refund_policy"
+            "accommodation_amenity",
+            "refund_policy",
         ]
         # exclude = ['id', 'created_at', 'updated_at', 'is_active', 'average_rating']
-
 
     # 숙소 기본정보
     def get_accommodation_info(self, obj):
@@ -134,6 +121,7 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             f"{address_data['city']} {address_data['states']} {address_data['road_name']} {address_data['address']}"
         )
         return address_full
+
     # 최저가
     def get_min_price(self, obj):
         min_price = obj.room_set.order_by("price").first()
