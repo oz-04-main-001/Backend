@@ -2,7 +2,7 @@ from typing import Any
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError, AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, NotFound, ValidationError
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request

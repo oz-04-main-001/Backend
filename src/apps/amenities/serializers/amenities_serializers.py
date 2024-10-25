@@ -127,3 +127,35 @@ class DetailedRoomOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomOption
         fields = ["id", "option", "custom_value"]
+
+
+class RoomOptionUpdateSerializer(serializers.ModelSerializer):
+    option = OptionSerializer(read_only=True)
+    option_id = serializers.PrimaryKeyRelatedField(queryset=Option.objects.all(), write_only=True, required=False)
+
+    class Meta:
+        model = RoomOption
+        fields = ["id", "room", "option", "option_id", "custom_value"]
+
+    def validate(self, data):
+        option = data.get("option_id")
+        custom_value = data.get("custom_value", "")
+
+        if option and option.is_custom and not custom_value:
+            raise serializers.ValidationError({"custom_value": "Custom value is required for custom options"})
+
+        if option and not option.is_custom and custom_value:
+            raise serializers.ValidationError({"custom_value": "Custom value should not be set for non-custom options"})
+
+        return data
+
+    def update(self, instance, validated_data):
+        option = validated_data.get("option_id", instance.option)
+        custom_value = validated_data.get("custom_value", instance.custom_value)
+
+        # 옵션 및 custom_value 업데이트
+        instance.option = option
+        instance.custom_value = custom_value
+        instance.save()
+
+        return instance
