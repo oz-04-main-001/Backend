@@ -119,7 +119,23 @@ class PasswordResetSerializer(serializers.Serializer):
         password1 = data.get("password")
         password2 = data.get("password2")
 
+        email = self.context.get("email")
+        otp_verified = self.context.get("otp_verified")
+
+        if not email:
+            raise serializers.ValidationError("No email found.")
+        if not otp_verified:
+            raise serializers.ValidationError("OTP verification failed.")
         if password1 != password2:
             raise serializers.ValidationError("The two password fields didn’t match.")
+
+        user = User.objects.get_user_by_email(email=email)
+
+        if not user:
+            raise serializers.ValidationError("No user found with this email.")
+
+        data["email"] = email
+        data["otp_verified"] = otp_verified
+        data["user"] = user
 
         return data

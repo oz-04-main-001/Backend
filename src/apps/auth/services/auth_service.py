@@ -1,5 +1,3 @@
-from rest_framework.exceptions import NotFound, ValidationError
-
 from apps.users.models import User, WithdrawManager
 
 
@@ -26,13 +24,6 @@ class UserAuthService:
         return User.objects.get_user_by_phone(phone_number)
 
     @staticmethod
-    def get_user_by_email(email: str) -> User:
-        user = User.objects.get_user_by_email(email=email)
-        if not user:
-            raise NotFound("User with this email does not exist.")
-        return user
-
-    @staticmethod
     def set_user_password(user: User, password: str) -> None:
         user.set_password(password)
         user.save()
@@ -43,12 +34,9 @@ class UserAuthService:
             user=user,
             withdraw_reason=withdraw_reason,
         )
+        user.is_active = False
+        user.save()
 
     @staticmethod
     def check_if_email_exists(email: str) -> bool:
         return User.objects.filter(email=email).exists()
-
-    @staticmethod
-    def validate_email_in_session(email: str) -> None:
-        if not email:
-            raise ValidationError("No email found.")

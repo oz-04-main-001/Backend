@@ -2,7 +2,7 @@ from typing import Any
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.exceptions import AuthenticationFailed, NotFound, ValidationError
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -18,7 +18,10 @@ from apps.auth.serializers.auth_serializer import (
 from apps.auth.serializers.token_serializer import TokenSerializer
 from apps.auth.services.auth_service import UserAuthService
 from apps.auth.services.token_service import TokenService
-from apps.common.util.email.serializers.otp_serializer import OTPVerificationSerializer
+from apps.common.util.email.serializers.otp_serializer import (
+    RegistrationOTPVerificationSerializer,
+    UserOTPVerificationSerializer,
+)
 from apps.common.util.email.services.otp_service import OTPService
 from apps.users.models import User, WithdrawManager  # type: ignore
 
@@ -29,6 +32,11 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
     permission_classes = [AllowAny]
     otp_service = OTPService()
 
+    @extend_schema(
+        summary="User Registration Request",
+        description="This API endpoint is used to register a new user.",
+        request=UserRegistrationSerializer,
+    )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -49,11 +57,16 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
 @extend_schema(tags=["User"])
 class UserRegistrationVerifyAPIView(GenericAPIView):
     permission_classes = [AllowAny]
-    serializer_class = OTPVerificationSerializer
+    serializer_class = RegistrationOTPVerificationSerializer
 
     otp_service = OTPService()
     user_auth_service = UserAuthService()
 
+    @extend_schema(
+        request=RegistrationOTPVerificationSerializer,
+        summary="User Registration Verify",
+        description="This API endpoint is used to verify the OTP sent to the user's email during registration.",
+    )
     def post(self, request, *args, **kwargs):
         user_data = request.session.get("user_data")
 
@@ -63,14 +76,13 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
         validated_data = serializer.validated_data
 
         email = validated_data.get("email")
-        otp = validated_data.get("otp")
         user_validated_data = validated_data.get("user_data")
 
-        self.otp_service.verify_otp(email, otp)
+        self.otp_service.delete_otp(email)
 
         self.user_auth_service.create_user(validated_data=user_validated_data)
 
-        del request.session["usqer_data"]
+        del request.session["user_data"]
 
         return Response(
             {"message": "OTP verified and user created successfully."},
@@ -84,6 +96,11 @@ class LoginAPIView(GenericAPIView):
     permission_classes = [AllowAny]
     token_service = TokenService()
 
+    @extend_schema(
+        request=LoginSerializer,
+        summary="User Login",
+        description="This API endpoint is used to log in a user.",
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -106,6 +123,11 @@ class CustomTokenRefreshView(GenericAPIView):
     permission_classes = [AllowAny]
     token_service = TokenService()
 
+    @extend_schema(
+        request=TokenSerializer,
+        summary="Refresh Access Token",
+        description="This API endpoint is used to refresh the access token.",
+    )
     def post(self, request, *args, **kwargs):
 
         access_token_raw = request.auth
@@ -134,6 +156,10 @@ class LogoutAPIView(GenericAPIView):
     permission_classes = [IsAuthenticated]
     token_service = TokenService()
 
+    @extend_schema(
+        summary="User Logout",
+        description="This API endpoint is used to log out a user.",
+    )
     def post(self, request, *args, **kwargs):
         user = request.user
 
@@ -147,6 +173,10 @@ class UserDeletionRequestAPIView(GenericAPIView):
     permission_classes = [IsAuthenticated]
     otp_service = OTPService()
 
+    @extend_schema(
+        summary="User Deletion Request",
+        description="This API endpoint is used to request user deletion.",
+    )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
 
         withdraw_reason = request.data.get("withdraw_reason", "")  # 당장은 없기에 시리얼 라이저 x
@@ -165,17 +195,23 @@ class UserDeletionRequestAPIView(GenericAPIView):
 
 @extend_schema(tags=["User"])
 class UserDeletionVerifyAPIView(GenericAPIView):
-    serializer_class = OTPVerificationSerializer
+    serializer_class = UserOTPVerificationSerializer
     permission_classes = [IsAuthenticated]
     user_auth_service = UserAuthService()
 
+    @extend_schema(
+        request=UserOTPVerificationSerializer,
+        summary="User Deletion Verify",
+        description="This API endpoint is used to verify the OTP sent to the user's email during user deletion.",
+    )
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        serializer = self.get_serializer(data=request.data)
+        user = request.user
+        email = user.email
+
+        serializer = self.get_serializer(data=request.data, context={"email": email})
         serializer.is_valid(raise_exception=True)
 
         withdraw_reason = request.session.get("withdraw_reason", "")  # 이후 검증 로직 추가
-
-        user = request.user
 
         self.user_auth_service.create_withdraw_record(withdraw_reason=withdraw_reason, user=user)
 
@@ -190,6 +226,11 @@ class UserEmailLookupAPIView(GenericAPIView):
     permission_classes = [AllowAny]
     user_auth_service = UserAuthService()
 
+    @extend_schema(
+        request=UserEmailLookupSerializer,
+        summary="User Email Lookup",
+        description="This API endpoint is used to lookup a user's email.",
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -206,6 +247,11 @@ class PasswordResetRequestAPIView(GenericAPIView):
     otp_service = OTPService()
     user_auth_service = UserAuthService()
 
+    @extend_schema(
+        request=PasswordResetRequestSerializer,
+        summary="Password Reset Request",
+        description="This API endpoint is used to request a password reset.",
+    )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -224,30 +270,29 @@ class PasswordResetRequestAPIView(GenericAPIView):
 
 @extend_schema(tags=["User"])
 class PasswordResetVerifyAPIView(GenericAPIView):
-    serializer_class = OTPVerificationSerializer
+    serializer_class = UserOTPVerificationSerializer
     permission_classes = [AllowAny]
     user_auth_service = UserAuthService()
     otp_service = OTPService()
 
+    @extend_schema(
+        request=UserOTPVerificationSerializer,
+        summary="Password Reset Verify",
+        description="This API endpoint is used to verify the OTP sent to the user's email during password reset.",
+    )
     def post(self, request, *args, **kwargs):
-        try:
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
 
-            email = request.session.get("reset_email")
-            self.user_auth_service.validate_email_in_session(email=email)
-            otp = serializer.validated_data.get("otp")
+        email = request.session.get("reset_email")
+        serializer = self.get_serializer(data=request.data, context={"email": email})
+        serializer.is_valid(raise_exception=True)
 
-            self.otp_service.verify_otp(email, otp)
+        email = serializer.validated_data.get("email")
 
-            request.session["otp_verified"] = True
+        self.otp_service.delete_otp(email)
 
-            return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
+        request.session["otp_verified"] = True
 
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["User"])
@@ -257,33 +302,37 @@ class PasswordResetAPIView(GenericAPIView):
     user_auth_service = UserAuthService()
     otp_service = OTPService()
 
+    @extend_schema(
+        request=PasswordResetSerializer,
+        summary="Password Reset",
+        description="This API endpoint is used to reset a user's password.",
+    )
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        try:
-            email = request.session.get("reset_email")
-            otp_verified = request.session.get("otp_verified", False)
 
-            self.user_auth_service.validate_email_in_session(email=email)
-            self.otp_service.validate_otp_verified_in_session(otp_verified=otp_verified)
+        email = request.session.get("reset_email")
+        otp_verified = request.session.get("otp_verified", False)
 
-            serializer = self.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
+        serializer = self.get_serializer(
+            data=request.data,
+            context={
+                "email": email,
+                "otp_verified": otp_verified,
+            },
+        )
 
-            password = serializer.validated_data.get("password")
+        serializer.is_valid(raise_exception=True)
 
-            user: User | None = self.user_auth_service.get_user_by_email(email=email)
-            self.user_auth_service.set_user_password(user, password)
+        user = serializer.validated_data.get("user")
+        password = serializer.validated_data.get("password")
 
-            del request.session["reset_email"]
-            del request.session["otp_verified"]
+        self.user_auth_service.set_user_password(user, password)
 
-            return Response(
-                {"message": "Password has been reset successfully."},
-                status=status.HTTP_200_OK,
-            )
+        del request.session["reset_email"]
+        del request.session["otp_verified"]
 
-        except NotFound as e:
-            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {"message": "Password has been reset successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+# 비밀번호 변경 후 로그인 에러 처리

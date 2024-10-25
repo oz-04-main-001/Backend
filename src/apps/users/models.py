@@ -40,7 +40,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def name(self) -> str:
-        return f"{self.first_name} {self.last_name}".strip()
+        return f"{self.last_name}{self.first_name}".strip()
 
     def __str__(self):
         return self.email
