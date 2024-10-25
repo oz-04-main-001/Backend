@@ -7,5 +7,4 @@ docker-compose exec django_gunicorn bash -c "
   pyenv activate django-main && \
   python src/manage.py test apps.pages.tests && \
   python src/manage.py test apps.bookings.tests
-
 "

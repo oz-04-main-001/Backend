@@ -7,11 +7,11 @@ from apps.accommodations.models import Accommodation, Accommodation_Image
 
 class MainPageSerializer(serializers.ModelSerializer):
     rooms = serializers.SerializerMethodField()
-    hotel_img = serializers.SerializerMethodField()
+    accommodation_img = serializers.SerializerMethodField()
 
     class Meta:
         model = Accommodation
-        fields = ["id", "name", "rooms", "hotel_img"]
+        fields = ["id", "name", "rooms", "accommodation_img"]
 
     def get_rooms(self, obj: Accommodation) -> Union[int, None]:
         min_price_room = obj.room_set.order_by("price").first()
@@ -19,7 +19,7 @@ class MainPageSerializer(serializers.ModelSerializer):
             return min_price_room.price
         return None
 
-    def get_hotel_img(self, obj: Accommodation) -> Union[str, None]:
+    def get_accommodation_img(self, obj: Accommodation) -> Union[str, None]:
         # Accommodation과 연결된 Accommodation_image 테이블에서 첫 번째 이미지의 URL을 반환
         img = Accommodation_Image.objects.filter(accommodation_id=obj.pk).first()  # 이미지들중 첫번째 이미지
         if img:  # img가 있다면
