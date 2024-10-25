@@ -1,6 +1,4 @@
-from typing import Optional
-
-from rest_framework.exceptions import AuthenticationFailed, ValidationError
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import AccessToken, RefreshToken
 
 from apps.common.util.redis_client import get_redis_client
@@ -35,13 +33,10 @@ class TokenService:
         return stored_refresh_token.decode()
 
     def refresh_access_token(self, access_token: str) -> str:
-        try:
 
-            token = AccessToken(str(access_token), verify=False)  # type: ignore
+        token = AccessToken(str(access_token), verify=False)  # type: ignore
 
-            user_id = token["user_id"]
-        except Exception as e:
-            raise AuthenticationFailed(f"Invalid access token. {e}")
+        user_id = token["user_id"]
 
         stored_refresh_token = self._get_stored_refresh_token(user_id)
 
@@ -54,8 +49,3 @@ class TokenService:
     def delete_refresh_token(user_id: int) -> None:
         redis_client.delete(f"refresh_{user_id}")
         print("삭제 완료")
-
-    @staticmethod
-    def validate_access_token(access_token: Optional[str]) -> None:
-        if not access_token:
-            raise ValidationError("Access token is required.")

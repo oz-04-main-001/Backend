@@ -3,15 +3,12 @@ from datetime import date
 
 from rest_framework import serializers
 
+from apps.bookings.models import Booking
 from apps.bookings.services.booking_guest_service import BookingService
 from apps.rooms.models import Room
 
 
 class BookingRequestCreateSerializer(serializers.Serializer):
-    accommodation_id = serializers.IntegerField(required=False)
-    room_id = serializers.IntegerField(required=False)
-    booker_phone_number = serializers.CharField(required=False)
-    booker_name = serializers.CharField(required=False)
 
     check_in_date = serializers.DateField()
     check_out_date = serializers.DateField()
@@ -24,10 +21,14 @@ class BookingRequestCreateSerializer(serializers.Serializer):
         return value
 
     def validate(self, data: dict) -> dict:
-        room_id = data["room_id"]
+        room_id = self.context.get("room_id")
+
         guests_count = data["guests_count"]
         check_in_date = data.pop("check_in_date")
         check_out_date = data.pop("check_out_date")
+        user = self.context.get("user")
+
+        data = BookingService.check_booker_data(data, user)
 
         try:
             room = Room.objects.get_by_room_id(room_id=room_id)
@@ -37,9 +38,6 @@ class BookingRequestCreateSerializer(serializers.Serializer):
         check_in_datetime, check_out_datetime = BookingService.create_check_in_out_datetime(
             check_in_date, check_out_date, room
         )
-
-        data["check_in_datetime"] = check_in_datetime
-        data["check_out_datetime"] = check_out_datetime
 
         if not room.is_available:
             raise serializers.ValidationError("This room is not available.")
@@ -69,6 +67,25 @@ class BookingRequestCreateSerializer(serializers.Serializer):
 
         total_price = room.price * (check_out_date - check_in_date).days
 
+        data["check_in_datetime"] = check_in_datetime
+        data["check_out_datetime"] = check_out_datetime
         data["total_price"] = total_price
+        data["room_id"] = room_id
 
+        return data
+
+
+class BookingResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+
+
+class BookingCancelSerializer(serializers.Serializer):
+
+    def validate(self, data: dict) -> dict:
+        try:
+            booking_id = self.context["booking_id"]
+            booking = Booking.objects.get_by_booking_id(booking_id=booking_id)
+            self.context["booking"] = booking
+        except Booking.DoesNotExist:
+            raise serializers.ValidationError("Invalid booking ID.")
         return data

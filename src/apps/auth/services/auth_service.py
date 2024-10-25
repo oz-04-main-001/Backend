@@ -52,8 +52,3 @@ class UserAuthService:
     def validate_email_in_session(email: str) -> None:
         if not email:
             raise ValidationError("No email found.")
-
-    @staticmethod
-    def validate_user_data_in_session(user_data: dict) -> None:
-        if not user_data:
-            raise ValidationError("User data not found in session.")

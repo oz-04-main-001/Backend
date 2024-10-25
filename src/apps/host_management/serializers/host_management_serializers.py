@@ -143,7 +143,7 @@ class BookingRequestCheckSerializer(serializers.Serializer):
 
     def validate_booking_id(self, booking_id: int) -> int:
         try:
-            booking = Booking.objects.get(id=booking_id)
+            booking = Booking.objects.get_by_booking_id(id=booking_id)
             self.context["booking"] = booking
         except Booking.DoesNotExist:
             raise serializers.ValidationError("Invalid booking ID.")
@@ -156,7 +156,7 @@ class BookingRequestCheckSerializer(serializers.Serializer):
 
     def validate(self, data: dict) -> dict:
         booking = self.context.get("booking")
-        user = self.context.get("request").user
+        user = self.context.get("user")
 
         if not booking:
             raise serializers.ValidationError("Booking not found.")

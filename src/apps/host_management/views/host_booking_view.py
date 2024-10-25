@@ -84,8 +84,8 @@ class BookingRequestCheckView(generics.GenericAPIView):
         클라이언트로가 patch요청을 보내면 요청 데이터로 부터 전송된 action이라는 키를 가져와야 함
         action의 값에 따라 booking.status의 값으로 반환함
         """
-
-        serializer = self.get_serializer(data=request.data)
+        user = request.user
+        serializer = self.get_serializer(data=request.data, context={"user": user})
         serializer.is_valid(raise_exception=True)
 
         booking = serializer.context["booking"]

@@ -2,12 +2,11 @@ from typing import Any
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound, ValidationError, AuthenticationFailed
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from apps.auth.serializers.auth_serializer import (
     LoginSerializer,
@@ -16,6 +15,7 @@ from apps.auth.serializers.auth_serializer import (
     UserEmailLookupSerializer,
     UserRegistrationSerializer,
 )
+from apps.auth.serializers.token_serializer import TokenSerializer
 from apps.auth.services.auth_service import UserAuthService
 from apps.auth.services.token_service import TokenService
 from apps.common.util.email.serializers.otp_serializer import OTPVerificationSerializer
@@ -55,33 +55,27 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
     user_auth_service = UserAuthService()
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        user_data = request.session.get("user_data")
+
+        serializer = self.get_serializer(data=request.data, context={"user_data": user_data})
         serializer.is_valid(raise_exception=True)
 
         validated_data = serializer.validated_data
 
         email = validated_data.get("email")
         otp = validated_data.get("otp")
-        user_data = request.session.get("user_data")
+        user_validated_data = validated_data.get("user_data")
 
-        try:
-            self.otp_service.verify_otp(email, otp)
+        self.otp_service.verify_otp(email, otp)
 
-            self.user_auth_service.validate_user_data_in_session(user_data)
+        self.user_auth_service.create_user(validated_data=user_validated_data)
 
-            self.user_auth_service.create_user(validated_data=user_data)
+        del request.session["usqer_data"]
 
-            del request.session["user_data"]
-
-            return Response(
-                {"message": "OTP verified and user created successfully."},
-                status=status.HTTP_201_CREATED,
-            )
-
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response(
+            {"message": "OTP verified and user created successfully."},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 @extend_schema(tags=["User"])
@@ -107,16 +101,20 @@ class LoginAPIView(GenericAPIView):
 
 
 @extend_schema(tags=["User"])
-class CustomTokenRefreshView(APIView):
+class CustomTokenRefreshView(GenericAPIView):
+    serializer_class = TokenSerializer
     permission_classes = [AllowAny]
     token_service = TokenService()
 
     def post(self, request, *args, **kwargs):
+
+        access_token_raw = request.auth
+
+        serializer = self.get_serializer(data=request.data, context={"access_token": access_token_raw})
+        serializer.is_valid(raise_exception=True)
+        access_token = serializer.validated_data.get("access_token")
+
         try:
-            access_token = request.auth
-
-            self.token_service.validate_access_token(access_token)
-
             new_access_token = self.token_service.refresh_access_token(access_token=access_token)
 
             return Response(
@@ -125,13 +123,10 @@ class CustomTokenRefreshView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
-
-        except ValidationError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except AuthenticationFailed as e:
+            return Response({"error": str(e)}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
-            return Response(
-                {"error": "An unexpected error occurred." + str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": "An unexpected error occurred"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @extend_schema(tags=["User"])

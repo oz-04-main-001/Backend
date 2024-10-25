@@ -5,44 +5,71 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from apps.bookings.models import Booking
 from apps.bookings.serializers.booking_guest_serializer import (
     BookingRequestCreateSerializer,
+    BookingResponseSerializer,
+    BookingCancelSerializer,
 )
 from apps.bookings.services.booking_guest_service import BookingService
 
 
-# 예약 요청
 @extend_schema(tags=["Guest"])
 class BookingRequestCreateView(GenericAPIView):
+    """예약 요청"""
+
     permission_classes = [IsAuthenticated]
     serializer_class = BookingRequestCreateSerializer
     booking_service = BookingService()
 
+    @extend_schema(
+        request=BookingRequestCreateSerializer,
+        responses={status.HTTP_201_CREATED: BookingResponseSerializer},
+    )
     def post(self, request, accommodation_id, room_id, *args, **kwargs):
+        """
+        숙소_id와 room_id를 path parameter로 받아서 해당 숙소의 해당 room에 대해 예약을 요청합니다.
+        """
         data = request.data.copy()
-        data["accommodation_id"] = accommodation_id
-        data["room_id"] = room_id
 
-        user_data = self.booking_service.check_booker_data(data, request.user)
+        context = {"accommodation_id": accommodation_id, "room_id": room_id, "user": request.user}
 
-        serializer = self.get_serializer(data=user_data)
+        serializer = self.get_serializer(data=data, context=context)
         serializer.is_valid(raise_exception=True)
-        print(serializer.validated_data)
+
         self.booking_service.create_booking(serializer.validated_data, request.user)
 
-        return Response({"message": "예약 완료"}, status=status.HTTP_201_CREATED)
+        response_serializer = BookingResponseSerializer({"message": "예약 완료"})
+
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(tags=["Guest"])
 class BookingCancelView(GenericAPIView):
+    """예약 취소"""
+
     permission_classes = [IsAuthenticated]
+    serializer_class = BookingCancelSerializer
     booking_service = BookingService()
 
+    @extend_schema(
+        request=BookingCancelSerializer,
+        responses={status.HTTP_200_OK: BookingResponseSerializer},
+    )
     def patch(self, request: Request, booking_id: int, *args, **kwargs) -> Response:
-        try:
-            self.booking_service.cancel_booking(booking_id=booking_id)
+        """
+        예약 ID를 path parameter로 받아서 해당 예약을 취소합니다.
+        """
 
-            return Response({"message": "Booking canceled successfully."}, status=status.HTTP_204_NO_CONTENT)
-        except Booking.DoesNotExist:
-            return Response({"error": "Booking not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = self.get_serializer(data=request.data, context={"booking_id": booking_id})
+        serializer.is_valid(raise_exception=True)
+
+        booking = serializer.context["booking"]
+
+        self.booking_service.cancel_booking(booking=booking)
+
+        response_serializer = BookingResponseSerializer({"message": "Booking canceled successfully."})
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_200_OK,
+        )
