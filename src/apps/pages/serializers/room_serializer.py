@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.accommodations.models import Accommodation
 from apps.amenities.models import Option, RoomOption
 from apps.rooms.models import Room, Room_Image, RoomInventory, RoomType
@@ -49,37 +48,29 @@ class BedSerializer(serializers.ModelSerializer):
         fields = ["id", "category", "name"]
 
 
-class RoomBedSerializer(serializers.ModelSerializer):
+class RoomSerializer(serializers.ModelSerializer):
     bed_info = serializers.SerializerMethodField()
 
     class Meta:
-        model = RoomOption
-        fields = ["bed_info"]
+        model = Room
+        fields = ["id", "name", "capacity", "max_capacity", "description", "price", "check_in_time", "check_out_time", "bed_info"]
 
     def get_bed_info(self, obj):
-        bed_options = RoomOption.objects.filter(room=obj.room_id, option__category="bed")
+        bed_options = RoomOption.objects.filter(room=obj.id, option__category="bed")
         bed_count = sum(option.custom_value for option in bed_options)
         bed_names = list(set(option.option.name for option in bed_options))
-
         return {"total_beds": bed_count, "bed_names": bed_names}
-
-
-class RoomSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Room
-        fields = ["id", "name", "capacity", "max_capacity", "description", "price", "check_in_time", "check_out_time"]
-
 
 class RoomDetailSerializer(RoomSerializer):
     room = serializers.SerializerMethodField()
     accommodation_name = serializers.SerializerMethodField()
     images = serializers.SerializerMethodField()
     room_options = serializers.SerializerMethodField()
-    bed = serializers.SerializerMethodField()
+
 
     class Meta:
         model = Room
-        fields = ["accommodation_name", "room", "room_options", "images", "bed"]
+        fields = ["accommodation_name", "room", "room_options", "images"]
 
     def get_accommodation_name(self, obj):
         return Accommodation.objects.get(pk=obj.accommodation_id).name
@@ -95,6 +86,4 @@ class RoomDetailSerializer(RoomSerializer):
         options = RoomOption.objects.filter(room=obj.id)
         return RoomRoomOptionSerializer(options, many=True).data
 
-    def get_bed(self, obj):
-        bed_options = RoomOption.objects.filter(room=obj.id, option__category="bed").first()
-        return RoomBedSerializer(bed_options).data if bed_options else None
+
