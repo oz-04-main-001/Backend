@@ -1,7 +1,7 @@
 from datetime import date
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, OpenApiExample
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -120,6 +120,25 @@ class CompleteBookingsView(generics.GenericAPIView):
                 required=False,
                 type=OpenApiTypes.DATE,
             ),
+        ],
+        examples=[
+            OpenApiExample(
+                "Reservation Example",
+                value={
+                    "id": 1,
+                    "guest": 1,
+                    "room": 101,
+                    "check_in_datetime": "2024-10-29 16:00:00",
+                    "check_out_datetime": "2024-10-30 11:00:00",
+                    "total_price": 150000,
+                    "status": "pending",
+                    "request": "Non-smoking room requested",
+                    "guests_count": 2,
+                    "guest_name": "John Doe",
+                    "accommodation_name": "Hotel Sunshine",
+                    "room_name": "Deluxe Suite",
+                },
+            )
         ],
     )
     def get(self, request, *args, **kwargs):
