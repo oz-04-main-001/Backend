@@ -58,7 +58,7 @@ class Command(BaseCommand):
 
         superuser = User.objects.create(
             email="admin1@naver.com",
-            password=make_password("admin"),
+            password=12345678,
             is_superuser=True,
             first_name="Admin",
             last_name="User",
