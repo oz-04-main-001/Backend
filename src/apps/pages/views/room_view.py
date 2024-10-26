@@ -13,10 +13,9 @@ class RoomDetailView(RetrieveAPIView):
     serializer_class = RoomDetailSerializer
 
     @extend_schema(
-            summary="  >> 룸 디테일 <<",
-            description="",
-            responses={200: RoomDetailSerializer()},
-        )
-
+        summary="  >> 룸 디테일 <<",
+        description="",
+        responses={200: RoomDetailSerializer()},
+    )
     def get(self, request, *args, **kwargs):
-            return self.retrieve(request, *args, **kwargs)
+        return self.retrieve(request, *args, **kwargs)

@@ -43,8 +43,6 @@ class BookingRequestCreateView(GenericAPIView):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-
-
 @extend_schema(tags=["Guest"])
 class BookingCancelView(GenericAPIView):
     """예약 취소"""
