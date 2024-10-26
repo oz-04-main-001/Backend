@@ -3,7 +3,6 @@ import string
 
 from django.conf import settings
 from django.core.mail import send_mail
-from rest_framework.exceptions import ValidationError
 
 from apps.common.util.redis_client import get_redis_client
 

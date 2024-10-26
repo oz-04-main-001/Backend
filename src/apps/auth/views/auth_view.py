@@ -14,6 +14,7 @@ from apps.auth.serializers.auth_serializer import (
     PasswordResetSerializer,
     UserEmailLookupSerializer,
     UserRegistrationSerializer,
+    UserOTPRequestSerializer,
 )
 from apps.auth.serializers.token_serializer import TokenSerializer
 from apps.auth.services.auth_service import UserAuthService
@@ -170,20 +171,26 @@ class LogoutAPIView(GenericAPIView):
 
 @extend_schema(tags=["User"])
 class UserDeletionRequestAPIView(GenericAPIView):
+    serializer_class = UserOTPRequestSerializer
     permission_classes = [IsAuthenticated]
     otp_service = OTPService()
 
     @extend_schema(
+        request=UserOTPRequestSerializer,
         summary="User Deletion Request",
         description="This API endpoint is used to request user deletion.",
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
 
         withdraw_reason = request.data.get("withdraw_reason", "")  # 당장은 없기에 시리얼 라이저 x
-
         user = request.user
 
-        self.otp_service.send_otp_email(user.email)  # type: ignore
+        serializer = self.get_serializer(data=request.data, context={"email": user.email})
+        serializer.is_valid(raise_exception=True)
+
+        email = serializer.validated_data.get("email")
+
+        self.otp_service.send_otp_email(email)  # type: ignore
 
         request.session["withdraw_reason"] = withdraw_reason
 

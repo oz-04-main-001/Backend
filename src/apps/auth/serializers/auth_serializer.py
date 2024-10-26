@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, get_user_model
 from rest_framework import serializers
 
 from apps.auth.services.auth_service import UserAuthService
+from apps.common.util.email.services.otp_service import OTPService
 
 User = get_user_model()
 
@@ -31,6 +32,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer[User]):  # type: ig
             raise serializers.ValidationError("Phone number must be in the format 010-1234-5678.")
 
         return value
+
+    def validate_email(self, email: str) -> str:
+        if OTPService().get_otp_from_redis(email):
+            raise serializers.ValidationError("OTP already sent. Please try again after a few minutes.")
+        return email
 
     def validate(self, data: dict) -> dict:
         if data.get("password") != data.get("password2"):
@@ -69,6 +75,18 @@ class LoginSerializer(serializers.Serializer):
         return data
 
 
+class UserOTPRequestSerializer(serializers.Serializer):
+    def validate(self, data: dict) -> dict:
+        email = self.context.get("email")
+
+        if OTPService().get_otp_from_redis(email):
+            raise serializers.ValidationError("OTP already sent. Please try again after a few minutes.")
+
+        data["email"] = email
+
+        return data
+
+
 class UserEmailLookupSerializer(serializers.Serializer):
     phone_number = serializers.CharField()
     full_name = serializers.CharField()
@@ -102,13 +120,15 @@ class UserEmailLookupSerializer(serializers.Serializer):
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-    def validate_email(self, value: str) -> str:
-        user_service = UserAuthService()
+    def validate_email(self, email: str) -> str:
 
-        if not user_service.check_if_email_exists(value):
+        if not UserAuthService().check_if_email_exists(email):
             raise serializers.ValidationError("No user is associated with this email.")
 
-        return value
+        if OTPService().get_otp_from_redis(email):
+            raise serializers.ValidationError("OTP already sent. Please try again after a few minutes.")
+
+        return email
 
 
 class PasswordResetSerializer(serializers.Serializer):
