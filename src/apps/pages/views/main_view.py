@@ -4,7 +4,6 @@ from rest_framework.permissions import AllowAny
 
 from apps.accommodations.models import Accommodation
 from apps.pages.serializers.main_serializer import MainPageSerializer
-from apps.pages.services.main_list_services import MainListPagination
 
 
 # /api/v1/ui/main/

@@ -6,6 +6,7 @@ from .views import (
     booking_request_view,
     booking_status_view,
     main_view,
+    mypage_view,
     room_view,
 )
 
@@ -21,4 +22,5 @@ urlpatterns = [
         name="booking_request",
     ),
     path("bookings/status/<int:pk>/", booking_status_view.BookingStatusView.as_view(), name="booking_status"),
+    path("mypage/", mypage_view.MyBookingListView.as_view(), name="my_booking_list"),
 ]
