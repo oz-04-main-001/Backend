@@ -15,7 +15,7 @@ class AccommodationDetailView(RetrieveAPIView):
     queryset = Accommodation.objects.all()
 
     @extend_schema(
-        summary="  >> 숙박 업소 디테일 페이지 / {accommodation_id}<<",
+        summary="  >> 숙박 업소 디테일 <<",
         description="capacity:기준 인원 / max_capacity:최대 인원 ",
         responses={200: AccommodationDetailSerializer()},
     )

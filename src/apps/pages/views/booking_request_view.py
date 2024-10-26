@@ -14,7 +14,7 @@ class BookingRequestView(RetrieveAPIView):
         return Room.objects.filter(accommodation__id=hotel_pk)
 
     @extend_schema(
-        summary=">> 예약 요청 /{숙소_id}/{룸_id}/ <<",
+        summary=">> 예약 요청 <<",
         description="capacity:기준인원 / ",
         responses={200: BookingRequestSerializer()},  # 응답이 리스트 형태로 나타남
     )

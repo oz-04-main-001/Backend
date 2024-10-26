@@ -107,7 +107,7 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
         if imgs:
             img_list = []
             for img in imgs:
-                img_list.append(img.image.name)
+                img_list.append(img.image.url)
             return img_list  # 이객체의 image필드의 값을 반환(클라우드 url주소 예정)
 
         return None  # img가 없다면 None 반환
@@ -147,7 +147,7 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             # room에 대한 이미지를 순회하며 대표 이미지를 찾습니다.
             for image in room_images:
                 if image.is_representative:
-                    representative_image = image.image.name
+                    representative_image = image.image.url
                     break  # 대표 이미지를 찾으면 더 이상 순회하지 않음
 
             # 직렬화된 데이터에 'images' 필드로 대표 이미지를 추가

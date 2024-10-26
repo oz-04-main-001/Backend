@@ -11,7 +11,7 @@ class BookingStatusView(RetrieveAPIView):
     serializer_class = BookingStatusSerializer
 
     @extend_schema(
-        summary=">> 예약 상태 확인 /{booking_id}/ <<",
+        summary=">> 예약 상태 확인 <<",
         description="예약 상태 확인",
         responses={200: BookingStatusSerializer()},  # 응답이 리스트 형태로 나타남
     )
