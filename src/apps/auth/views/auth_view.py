@@ -13,8 +13,8 @@ from apps.auth.serializers.auth_serializer import (
     PasswordResetRequestSerializer,
     PasswordResetSerializer,
     UserEmailLookupSerializer,
-    UserRegistrationSerializer,
     UserOTPRequestSerializer,
+    UserRegistrationSerializer,
 )
 from apps.auth.serializers.token_serializer import TokenSerializer
 from apps.auth.services.auth_service import UserAuthService

@@ -1,26 +1,32 @@
 import random
 from datetime import datetime, time, timedelta
+
+from django.contrib.auth.hashers import make_password
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from faker import Faker
-from django.contrib.auth.hashers import make_password
 
-from apps.accommodations.models import Accommodation, AccommodationType, GPS_Info, RefundPolicy
+from apps.accommodations.models import (
+    Accommodation,
+    AccommodationType,
+    GPS_Info,
+    RefundPolicy,
+)
 from apps.amenities.models import AccommodationAmenity, Amenity, Option, RoomOption
 from apps.bookings.models import Booking
 from apps.common.choices import (
     AMENITY_CATEGORIES_CHOICES,
     AMENITY_CHOICES_BY_CATEGORY,
+    BOOKING_STATUS_CHOICES,
     GENDER_CHOICES,
     OPTION_CATEGORIES_CHOICES,
     OPTION_CHOICES_BY_CATEGORY,
     SOCIAL_LOGIN_CHOICES,
     USER_TYPE_CHOICES,
     VERIFICATION_STATUS_CHOICES,
-    BOOKING_STATUS_CHOICES,
 )
-from apps.rooms.models import Room, RoomInventory, RoomType, Room_Image
+from apps.rooms.models import Room, Room_Image, RoomInventory, RoomType
 from apps.users.models import BusinessUser, User
 
 
