@@ -265,6 +265,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
     ],
+    "EXCEPTION_HANDLER": "apps.common.util.custom_exception_handler.validation_error_handler.custom_exception_handler",
 }
 
 SPECTACULAR_SETTINGS = {

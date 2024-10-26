@@ -57,7 +57,7 @@ class Command(BaseCommand):
         print("Creating superuser and business profile...")
 
         superuser = User.objects.create(
-            email="admin9@naver.com",
+            email="admin1@naver.com",
             password=make_password("admin"),
             is_superuser=True,
             first_name="Admin",

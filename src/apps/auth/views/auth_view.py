@@ -34,11 +34,15 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
     otp_service = OTPService()
 
     @extend_schema(
-        summary="User Registration Request",
-        description="This API endpoint is used to register a new user.",
+        summary="사용자 회원가입 API",
         request=UserRegistrationSerializer,
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        해당 API로 회원가입 요청을 보내세요. 요청을 보낼 시 user_data는 session에 저장되어 있어 프론트에서 관리 하지 않아도 됩니다 \n\n
+        날짜:  YYYY - MM - DD 형식 \n\n
+        전화번호:  010-1234-5678 형식
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -65,8 +69,8 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
 
     @extend_schema(
         request=RegistrationOTPVerificationSerializer,
-        summary="User Registration Verify",
-        description="This API endpoint is used to verify the OTP sent to the user's email during registration.",
+        summary="회원가입 OTP 검증 API",
+        description="해당 API는 OTP 검증을 위한 api입니다.",
     )
     def post(self, request, *args, **kwargs):
         user_data = request.session.get("user_data")
@@ -99,8 +103,8 @@ class LoginAPIView(GenericAPIView):
 
     @extend_schema(
         request=LoginSerializer,
-        summary="User Login",
-        description="This API endpoint is used to log in a user.",
+        summary="사용자 로그인 API",
+        description="이메일과 비밀번호를 입력하고 로그인하는 API입니다",
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -126,8 +130,8 @@ class CustomTokenRefreshView(GenericAPIView):
 
     @extend_schema(
         request=TokenSerializer,
-        summary="Refresh Access Token",
-        description="This API endpoint is used to refresh the access token.",
+        summary="Access token 재발급 API",
+        description="Access Token을 재발급합니다. \n\n 만약 Refresh token도 만료 시 401 에러 -> 로그인 페이지",
     )
     def post(self, request, *args, **kwargs):
 
@@ -158,10 +162,14 @@ class LogoutAPIView(GenericAPIView):
     token_service = TokenService()
 
     @extend_schema(
-        summary="User Logout",
-        description="This API endpoint is used to log out a user.",
+        summary="사용자 로그아웃 API",
     )
     def post(self, request, *args, **kwargs):
+        """
+        사용자 로그아웃 API입니다. 가지고 있던 Refresh token을 만료시킵니다. \n\n
+        Access token은 만료되지 않습니다. 대신 access token의 주기를 짧게 가져가고 \n\n
+        Refresh token의 주기는 길게 가져갑니다.
+        """
         user = request.user
 
         self.token_service.delete_refresh_token(user.id)
@@ -177,8 +185,8 @@ class UserDeletionRequestAPIView(GenericAPIView):
 
     @extend_schema(
         request=UserOTPRequestSerializer,
-        summary="User Deletion Request",
-        description="This API endpoint is used to request user deletion.",
+        summary="사용자 삭제 요청 API",
+        description="사용자가 회원가입 시 등록했던 이메일로 otp 이메일 발송",
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
 
@@ -208,8 +216,8 @@ class UserDeletionVerifyAPIView(GenericAPIView):
 
     @extend_schema(
         request=UserOTPVerificationSerializer,
-        summary="User Deletion Verify",
-        description="This API endpoint is used to verify the OTP sent to the user's email during user deletion.",
+        summary="사용자 삭제 OTP 검증",
+        description="해당 API는 OTP 검증 후 사용자를 비활성화합니다",
     )
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         user = request.user
@@ -235,10 +243,13 @@ class UserEmailLookupAPIView(GenericAPIView):
 
     @extend_schema(
         request=UserEmailLookupSerializer,
-        summary="User Email Lookup",
-        description="This API endpoint is used to lookup a user's email.",
+        summary="사용자 이메일 조회 API",
     )
     def post(self, request, *args, **kwargs):
+        """
+        사용자의 이름과 전화번호를 바탕으로 이메일을 조회합니다 \n\n
+        전화 번호:  010-1234-5678 형식
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -256,8 +267,8 @@ class PasswordResetRequestAPIView(GenericAPIView):
 
     @extend_schema(
         request=PasswordResetRequestSerializer,
-        summary="Password Reset Request",
-        description="This API endpoint is used to request a password reset.",
+        summary="비밀번호 재설정 요청 API",
+        description="비밀번호 재설정 요청 API입니다. 입력한 이메일로 검증 메일 발송",
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -284,8 +295,8 @@ class PasswordResetVerifyAPIView(GenericAPIView):
 
     @extend_schema(
         request=UserOTPVerificationSerializer,
-        summary="Password Reset Verify",
-        description="This API endpoint is used to verify the OTP sent to the user's email during password reset.",
+        summary="비밀번호 검증 API",
+        description="해당 API는 OTP 검증 후 비밀번호 재설정 api로 이동",
     )
     def post(self, request, *args, **kwargs):
 
@@ -311,8 +322,8 @@ class PasswordResetAPIView(GenericAPIView):
 
     @extend_schema(
         request=PasswordResetSerializer,
-        summary="Password Reset",
-        description="This API endpoint is used to reset a user's password.",
+        summary="비밀번호 재설정 API",
+        description="해당 API는 OTP 검증이 끝난 사용자만 접근 가능합니다. 새로운 비밀번호를 설정해주세요",
     )
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
 
