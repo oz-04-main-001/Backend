@@ -23,4 +23,5 @@ urlpatterns = [
     ),
     path("bookings/status/<int:pk>/", booking_status_view.BookingStatusView.as_view(), name="booking_status"),
     path("mypage/", mypage_view.MyBookingListView.as_view(), name="my_booking_list"),
+    # path("mypage/", mypage_view.MyBookingListView.as_view(), name="my_booking_list"),
 ]
