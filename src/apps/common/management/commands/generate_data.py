@@ -62,11 +62,11 @@ class Command(BaseCommand):
     def create_superuser_and_business_profile(self, fake):
         print("Creating superuser and business profile...")
 
-        superuser = User.objects.create(
-            email="admin1@naver.com",
-            password=12345678,
+        superuser = User.objects.create_user(
+            email="host@naver.com",
+            password="12345678",
             is_superuser=True,
-            first_name="Admin",
+            first_name="Host",
             last_name="User",
             phone_number="010-1234-5678",
             gender="male",
@@ -84,7 +84,7 @@ class Command(BaseCommand):
             user=superuser,
             business_number="1234567890",
             business_document="business_doc.pdf",
-            business_email="admin_business@naver.com",
+            business_email="host_business@naver.com",
             business_phonenumber="011-1234-5678",
             business_address=fake.address(),
             verification_status="verified",
@@ -169,7 +169,7 @@ class Command(BaseCommand):
         print("Generating Users...")
 
         for _ in range(30):
-            user = User.objects.create(
+            user = User.objects.create_user(
                 first_name=fake.first_name(),
                 last_name=fake.last_name(),
                 email=fake.email(),
@@ -376,12 +376,19 @@ class Command(BaseCommand):
         print("Generating Bookings...")
 
         rooms = Room.objects.all()
+        guest_user = self.create_guest_user(fake)
         guests = User.objects.filter(user_type="guest")  # guest 사용자만 선택
+        admin_user = User.objects.get(email="host@naver.com")
         superuser_rooms = rooms.filter(accommodation__host__user__is_superuser=True)
 
         if not rooms.exists() or not guests.exists():
             print("No rooms or guests available for creating bookings.")
             return
+
+        # 게스트 유저의 예약 생성
+        for _ in range(10):  # 10개의 예약 생성
+            room = random.choice(rooms)
+            self.create_booking(fake, room, guest_user)
 
         # 일반 사용자 방에 대한 예약 생성
         for _ in range(20):  # 원하는 예약 개수만큼 반복
@@ -391,9 +398,14 @@ class Command(BaseCommand):
 
         # 슈퍼유저 방에 대한 추가 예약 생성
         for room in superuser_rooms:
-            for _ in range(random.randint(1, 3)):  # 슈퍼유저 방에 대해 1~3개의 추가 예약 생성
+            for _ in range(random.randint(3, 10)):  # 슈퍼유저 방에 대해 1~3개의 추가 예약 생성
                 guest = random.choice(guests)
                 self.create_booking(fake, room, guest)
+
+        # 슈퍼 유저의 다른 게스트에 대한 예약 추가
+        for _ in range(random.randint(3, 10)):
+            room = random.choice(rooms.exclude(accommodation__host__user=admin_user))
+            self.create_booking(fake, room, admin_user)
 
     # 예약 생성을 위한 공통 함수
     def create_booking(self, fake, room, guest):
@@ -422,3 +434,22 @@ class Command(BaseCommand):
             print(f"Booking created for {booking.booker_name} in room {room.name} with status {booking.status}")
         else:
             print(f"Booking for {booking.booker_name} in room {room.name} already exists, skipping creation.")
+
+    def create_guest_user(self, fake):
+        guest_user = User.objects.create_user(
+            email="guest@naver.com",
+            password="12345678",
+            first_name="Guest",
+            last_name="User",
+            phone_number="010-9999-8888",
+            gender="male",
+            birth_date=fake.date_of_birth(minimum_age=18, maximum_age=60),
+            user_type="guest",
+            social_login="email",
+            verified_email=True,
+            is_active=True,
+            created_at=timezone.now(),
+            updated_at=timezone.now(),
+        )
+        print(f"Guest user created: {guest_user.email}")
+        return guest_user
