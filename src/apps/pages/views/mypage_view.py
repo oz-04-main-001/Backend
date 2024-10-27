@@ -9,11 +9,10 @@ from apps.pages.serializers.mypage_serializer import MyPageSerializer
 @extend_schema(tags=["Guest"])
 class MyBookingListView(ListAPIView):
     serializer_class = MyPageSerializer
-    # permission_classes = (IsAuthenticated,)
-    permission_classes = (AllowAny,)
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
-        summary="  >> MyPage / 회원정보 / 예약리스트 <<",
+        summary="MyPage - 회원정보 - 예약리스트",
         description="",
         responses={200: MyPageSerializer()},
     )

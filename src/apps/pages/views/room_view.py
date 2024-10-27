@@ -13,7 +13,7 @@ class RoomDetailView(RetrieveAPIView):
     serializer_class = RoomDetailSerializer
 
     @extend_schema(
-        summary="  >> 룸 디테일 <<",
+        summary="룸 디테일 -> /{id}: room_id",
         description="",
         responses={200: RoomDetailSerializer()},
     )

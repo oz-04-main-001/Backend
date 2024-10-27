@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Dict, List, Optional, Union
 
 from rest_framework import serializers
 
@@ -83,7 +83,6 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Accommodation
-
         fields = [
             "accommodation_img",
             "accommodation_info",
@@ -93,44 +92,38 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             "accommodation_amenity",
             "refund_policy",
         ]
-        # exclude = ['id', 'created_at', 'updated_at', 'is_active', 'average_rating']
 
     # 숙소 기본정보
-    def get_accommodation_info(self, obj):
+    def get_accommodation_info(self, obj: Accommodation) -> dict:
         accommodation = Accommodation.objects.get(pk=obj.id)
         serializer = AccommodationSerializer(accommodation)
         return serializer.data
 
     # 숙소 이미지들
-    def get_accommodation_img(self, obj: Accommodation) -> Union[str, None]:
+    def get_accommodation_img(self, obj: Accommodation) -> Optional[List[str]]:
         imgs = Accommodation_Image.objects.filter(accommodation_id=obj.pk)
         if imgs:
-            img_list = []
-            for img in imgs:
-                img_list.append(img.image.url)
-            return img_list  # 이객체의 image필드의 값을 반환(클라우드 url주소 예정)
-
-        return None  # img가 없다면 None 반환
+            return [img.image.url for img in imgs]
+        return None
 
     # 숙소 주소
-    def get_address(self, obj):
+    def get_address(self, obj: Accommodation) -> Optional[str]:
         gps_info = GPS_Info.objects.filter(accommodation=obj)
         serializer = AccommodationAddressSerializer(gps_info, many=True)
         address_data = serializer.data[0] if serializer.data else None
-        address_full = (
-            f"{address_data['city']} {address_data['states']} {address_data['road_name']} {address_data['address']}"
-        )
-        return address_full
-
-    # 최저가
-    def get_min_price(self, obj):
-        min_price = obj.room_set.order_by("price").first()
-        if min_price:
-            return min_price.price
+        if address_data:
+            return (
+                f"{address_data['city']} {address_data['states']} {address_data['road_name']} {address_data['address']}"
+            )
         return None
 
+    # 최저가
+    def get_min_price(self, obj: Accommodation) -> Optional[int]:
+        min_price = obj.room_set.order_by("price").first()
+        return min_price.price if min_price else None
+
     # 룸정보 + 룸대표이미지
-    def get_rooms(self, obj):
+    def get_rooms(self, obj: Accommodation) -> List[Dict[str, Union[str, Optional[str]]]]:
         rooms = Room.objects.filter(accommodation=obj)
         room_list = []
 
@@ -148,23 +141,20 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             for image in room_images:
                 if image.is_representative:
                     representative_image = image.image.url
-                    break  # 대표 이미지를 찾으면 더 이상 순회하지 않음
+                    break
 
             # 직렬화된 데이터에 'images' 필드로 대표 이미지를 추가
             room_dict["images"] = representative_image
-
-            # 각 room의 데이터를 room_list에 추가
             room_list.append(room_dict)
 
-        # room_list에는 각 room의 대표 이미지가 포함됨
         return room_list
 
-    def get_accommodation_amenity(self, obj):
+    def get_accommodation_amenity(self, obj: Accommodation):
         accommodation_amenities = AccommodationAmenity.objects.filter(accommodation=obj)
         serializer = AccommodationAmenitySerializer(accommodation_amenities, many=True)
         return serializer.data
 
-    def get_refund_policy(self, obj):
+    def get_refund_policy(self, obj: Accommodation):
         refund_policy = RefundPolicy.objects.filter(accommodation=obj)
         refund_policy_serializer = AccommodationRefundPolicySerializer(refund_policy, many=True)
         return refund_policy_serializer.data

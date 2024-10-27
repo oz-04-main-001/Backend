@@ -1,4 +1,9 @@
+from typing import Any, Dict, List
+
+from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import AllowAny
 
 from apps.accommodations.models import Accommodation
 from apps.amenities.models import Option, RoomOption
@@ -66,7 +71,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "bed_info",
         ]
 
-    def get_bed_info(self, obj):
+    def get_bed_info(self, obj: Room) -> Dict[str, Any]:
         bed_options = RoomOption.objects.filter(room=obj.id, option__category="bed")
         bed_count = sum(option.custom_value for option in bed_options)
         bed_names = list(set(option.option.name for option in bed_options))
@@ -83,16 +88,16 @@ class RoomDetailSerializer(RoomSerializer):
         model = Room
         fields = ["accommodation_name", "room", "room_options", "images"]
 
-    def get_accommodation_name(self, obj):
+    def get_accommodation_name(self, obj: Room) -> str:
         return Accommodation.objects.get(pk=obj.accommodation_id).name
 
-    def get_room(self, obj):
+    def get_room(self, obj: Room) -> Dict[str, Any]:
         return RoomSerializer(Room.objects.get(pk=obj.id)).data
 
-    def get_images(self, obj):
+    def get_images(self, obj: Room):
         images = Room_Image.objects.filter(room=obj.id)
         return RoomImagesSerializer(images, many=True).data
 
-    def get_room_options(self, obj):
+    def get_room_options(self, obj: Room):
         options = RoomOption.objects.filter(room=obj.id)
         return RoomRoomOptionSerializer(options, many=True).data
