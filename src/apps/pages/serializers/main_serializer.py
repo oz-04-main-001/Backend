@@ -5,7 +5,6 @@ from rest_framework import serializers
 from apps.accommodations.models import Accommodation, Accommodation_Image
 
 
-
 class MainPageSerializer(serializers.ModelSerializer):
     min_price = serializers.SerializerMethodField()
     accommodation_img = serializers.SerializerMethodField()

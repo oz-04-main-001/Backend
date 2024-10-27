@@ -3,7 +3,9 @@ from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import AllowAny
 
 from apps.accommodations.models import Accommodation
-from apps.pages.serializers.accommodation_serializer import AccommodationDetailSerializer
+from apps.pages.serializers.accommodation_serializer import (
+    AccommodationDetailSerializer,
+)
 
 
 # 숙박 업소 디테일 뷰
