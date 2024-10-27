@@ -117,6 +117,7 @@ class LoginAPIView(GenericAPIView):
         return Response(
             {
                 "access_token": access_token,
+                "user_type": user.user_type,
             },
             status=status.HTTP_200_OK,
         )
