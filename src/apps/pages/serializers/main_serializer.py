@@ -19,5 +19,5 @@ class MainPageSerializer(serializers.ModelSerializer):
 
     # 숙소 대표 이미지
     def get_accommodation_img(self, obj: Accommodation) -> Optional[Union[str, None]]:
-        img = Accommodation_Image.objects.filter(accommodation=obj).get(is_representative=True)
+        img = Accommodation_Image.objects.filter(accommodation=obj).filter(is_representative=True).first()
         return img.image.url if img else None
