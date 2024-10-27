@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional
 
 from rest_framework import serializers
 
@@ -13,16 +13,11 @@ class MainPageSerializer(serializers.ModelSerializer):
         model = Accommodation
         fields = ["id", "name", "min_price", "accommodation_img"]
 
-    def get_min_price(self, obj: Accommodation) -> Union[int, None]:
+    def get_min_price(self, obj: Accommodation) -> Optional[int]:
         min_price_room = obj.room_set.order_by("price").first()
-        if min_price_room:
-            return min_price_room.price
-        return None
+        return min_price_room.price if min_price_room else None
 
-    def get_accommodation_img(self, obj: Accommodation) -> Union[str, None]:
-        # Accommodation과 연결된 Accommodation_image 테이블에서 첫 번째 이미지의 URL을 반환
-        img = Accommodation_Image.objects.filter(accommodation_id=obj.pk).first()  # 이미지들중 첫번째 이미지
-        if img:  # img가 있다면
-            return img.image.url  # 이객체의 image필드의 값을 반환(클라우드 url주소 예정)
-
-        return None  # img가 없다면 None 반환
+    def get_accommodation_img(self, obj: Accommodation) -> Optional[str]:
+        # Accommodation과 연결된 Accommodation_Image 테이블에서 첫 번째 이미지의 URL을 반환
+        img = Accommodation_Image.objects.filter(accommodation_id=obj.pk).first()
+        return img.image.url if img else None
