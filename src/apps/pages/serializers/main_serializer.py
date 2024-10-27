@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Optional, Union
 
 from rest_framework import serializers
 
 from apps.accommodations.models import Accommodation, Accommodation_Image
+
 
 
 class MainPageSerializer(serializers.ModelSerializer):
@@ -17,7 +18,7 @@ class MainPageSerializer(serializers.ModelSerializer):
         min_price_room = obj.room_set.order_by("price").first()
         return min_price_room.price if min_price_room else None
 
-    def get_accommodation_img(self, obj: Accommodation) -> Optional[str]:
-        # Accommodation과 연결된 Accommodation_Image 테이블에서 첫 번째 이미지의 URL을 반환
-        img = Accommodation_Image.objects.filter(accommodation_id=obj.pk).first()
+    # 숙소 대표 이미지
+    def get_accommodation_img(self, obj: Accommodation) -> Optional[Union[str, None]]:
+        img = Accommodation_Image.objects.filter(accommodation=obj).get(is_representative=True)
         return img.image.url if img else None
