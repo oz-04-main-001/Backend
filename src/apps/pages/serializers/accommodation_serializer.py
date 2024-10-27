@@ -149,10 +149,22 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
 
         return room_list
 
-    def get_accommodation_amenity(self, obj: Accommodation):
+    def get_accommodation_amenity(self, obj: Accommodation) -> List[Dict[str, Union[str, bool]]]:
         accommodation_amenities = AccommodationAmenity.objects.filter(accommodation=obj)
-        serializer = AccommodationAmenitySerializer(accommodation_amenities, many=True)
-        return serializer.data
+        amenities_data = []
+
+        for accommodation_amenity in accommodation_amenities:
+            amenity = accommodation_amenity.amenity
+            amenity_data = {
+                "name": amenity.name,
+                "category": amenity.category,
+                "description": amenity.description,
+                "icon": amenity.icon,
+                "is_custom": amenity.is_custom,
+            }
+            amenities_data.append(amenity_data)
+
+        return amenities_data
 
     def get_refund_policy(self, obj: Accommodation):
         refund_policy = RefundPolicy.objects.filter(accommodation=obj)

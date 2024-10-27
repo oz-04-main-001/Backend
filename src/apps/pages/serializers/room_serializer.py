@@ -98,6 +98,18 @@ class RoomDetailSerializer(RoomSerializer):
         images = Room_Image.objects.filter(room=obj.id)
         return RoomImagesSerializer(images, many=True).data
 
-    def get_room_options(self, obj: Room):
+    def get_room_options(self, obj: Room) -> List[Dict[str, Any]]:
         options = RoomOption.objects.filter(room=obj.id)
-        return RoomRoomOptionSerializer(options, many=True).data
+        options_data = []
+
+        for room_option in options:
+            option_data = {
+                "id": room_option.option.id,
+                "name": room_option.option.name,
+                "category": room_option.option.category,
+                "is_custom": room_option.option.is_custom,
+                "custom_value": room_option.custom_value,  # Assuming custom_value is an attribute of RoomOption
+            }
+            options_data.append(option_data)
+
+        return options_data
