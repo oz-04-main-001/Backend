@@ -4,6 +4,7 @@ from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
 from django.db import models
 
+from apps.accommodations.querysets.accommodation_queryset import AccommodationQuerySet
 from apps.users.models import BusinessUser
 
 
@@ -17,6 +18,8 @@ class Accommodation(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = AccommodationQuerySet.as_manager()
 
 
 class AccommodationType(models.Model):
