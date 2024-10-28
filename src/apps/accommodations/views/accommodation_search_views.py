@@ -1,9 +1,8 @@
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework import status
-
 
 from apps.accommodations.serializers.accommodations_search_serializer import (
     AccommodationAvailabilityRequestSerializer,

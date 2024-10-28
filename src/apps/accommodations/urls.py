@@ -2,7 +2,9 @@
 from django.urls import path
 
 from apps.accommodations.views import accommodation_views as views
-from apps.accommodations.views.accommodation_search_views import AvailableAccommodationsAPIView
+from apps.accommodations.views.accommodation_search_views import (
+    AvailableAccommodationsAPIView,
+)
 from apps.amenities.views import amenities_views
 
 app_name = "accommodations"
