@@ -19,8 +19,3 @@ class BookingTotalPriceService:
             raise ValueError("계산을 할 수 없습니다.")
 
         return self.total_price
-
-    def __str__(self) -> str:
-        # 1000단위로 , 넣어서 출력
-        formatted_price = f"{self.total_price:,}"
-        return formatted_price
