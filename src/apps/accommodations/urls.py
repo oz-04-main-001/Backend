@@ -2,6 +2,7 @@
 from django.urls import path
 
 from apps.accommodations.views import accommodation_views as views
+from apps.accommodations.views.accommodation_search_views import AvailableAccommodationsAPIView
 from apps.amenities.views import amenities_views
 
 app_name = "accommodations"
@@ -37,4 +38,5 @@ urlpatterns = [
         name="accommodation-amenities",
     ),
     path("<int:accommodation_id>/refund-policy/", views.RefundPolicyView.as_view(), name="accommodation-refund-policy"),
+    path("search/", AvailableAccommodationsAPIView.as_view(), name="accommodation-search"),
 ]
