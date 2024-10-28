@@ -32,8 +32,8 @@ class BookingRequestSerializer(serializers.ModelSerializer):
 
     def get_total_price(self, obj: Room) -> Optional[int]:
         request = self.context.get("request")
-        check_in_date = request.query_params.get("check_in_date")
-        check_out_date = request.query_params.get("check_out_date")
+        check_in_date = request.GET.get("check_in_date")
+        check_out_date = request.GET.get("check_out_date")
         day_price = obj.price
 
         if check_in_date and check_out_date:
@@ -44,13 +44,13 @@ class BookingRequestSerializer(serializers.ModelSerializer):
 
     def get_check_in_date(self, obj: Room) -> Optional[str]:
         request = self.context.get("request")
-        return request.query_params.get("check_in_date")
+        return request.GET.get("check_in_date")
 
     def get_check_out_date(self, obj: Room) -> Optional[str]:
         request = self.context.get("request")
-        return request.query_params.get("check_out_date")
+        return request.GET.get("check_out_date")
 
     def get_guests_count(self, obj: Room) -> int:
         request = self.context.get("request")
-        guests_count = request.query_params.get("guests_count")
+        guests_count = request.GET.get("guests_count")
         return int(guests_count) if guests_count else 0
