@@ -7,6 +7,7 @@ from rest_framework.permissions import AllowAny
 
 from apps.accommodations.models import Accommodation
 from apps.amenities.models import Option, RoomOption
+from apps.pages.services.money_view_service import MoneyViewService
 from apps.rooms.models import Room, Room_Image, RoomInventory, RoomType
 
 
@@ -56,6 +57,7 @@ class BedSerializer(serializers.ModelSerializer):
 
 class RoomSerializer(serializers.ModelSerializer):
     bed_info = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
 
     class Meta:
         model = Room
@@ -71,11 +73,18 @@ class RoomSerializer(serializers.ModelSerializer):
             "bed_info",
         ]
 
+    def get_price(self, obj: Room) -> str:
+        price = obj.price
+        money_view = MoneyViewService()
+        money_price = money_view.format(price)
+        return money_price
+
     def get_bed_info(self, obj: Room) -> Dict[str, Any]:
         bed_options = RoomOption.objects.filter(room=obj.id, option__category="bed")
-        bed_count = sum(option.custom_value for option in bed_options)
-        bed_names = list(set(option.option.name for option in bed_options))
-        return {"total_beds": bed_count, "bed_names": bed_names}
+        bed_total_count = sum(option.custom_value for option in bed_options)
+        bed_type_num = dict(set((option.option.name, option.custom_value) for option in bed_options))
+
+        return {"total_beds": bed_total_count, "bed_type_num": bed_type_num}
 
 
 class RoomDetailSerializer(RoomSerializer):
