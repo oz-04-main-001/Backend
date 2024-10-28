@@ -1,7 +1,8 @@
 from datetime import datetime
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, F, Count
+from django.db.models.functions import Coalesce
 
 
 class RoomQuerySet(models.QuerySet):
@@ -25,3 +26,27 @@ class RoomQuerySet(models.QuerySet):
 
     def with_amenities(self, amenity_ids):
         return self.filter(amenities__id__in=amenity_ids).distinct()
+
+    def filter_available_rooms(self, accommodations_in_location, guests_count):
+        return self.filter(
+            Q(accommodation__in=accommodations_in_location)
+            & Q(capacity__lte=guests_count)
+            & Q(max_capacity__gte=guests_count)
+            & Q(is_available=True)
+        )
+
+    def annotate_overlapping_bookings(self, check_in_date, check_out_date):
+        return self.annotate(
+            overlapping_bookings=Coalesce(
+                Count(
+                    "booking",
+                    filter=Q(
+                        booking__check_out_datetime__gt=check_in_date, booking__check_in_datetime__lt=check_out_date
+                    ),
+                ),
+                0,
+            )
+        )
+
+    def filter_rooms_with_sufficient_inventory(self):
+        return self.filter(roominventory__count_room__gt=F("overlapping_bookings"))
