@@ -45,8 +45,17 @@ class AvailableAccommodationsAPIView(GenericAPIView):
                 type=OpenApiTypes.INT,
             ),
         ],
+        summary="검색 결과 숙소 조회 API",
     )
     def get(self, request, *args, **kwargs):
+        """
+        query_params: check_in_date, check_out_date, state, guests_count \n\n
+        return: list of accommodations with available rooms \n\n
+        check_in_date: YYYY-MM-DD \n\n
+        check_out_date: YYYY-MM-DD \n\n
+        state: '서울특별시' \n\n
+        guests_count: int \n\n
+        """
         serializer = self.get_serializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
