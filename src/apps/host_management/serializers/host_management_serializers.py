@@ -28,6 +28,8 @@ class BookingSerializer(serializers.ModelSerializer):
             "guest_name",
             "accommodation_name",
             "room_name",
+            "booker_name",
+            "booker_phone_number",
         ]
 
     def validate_check_in_datetime(self, value):
@@ -209,3 +211,12 @@ class AccommodationHostManagementSerializer(serializers.ModelSerializer):
 
     def get_address(self, obj):
         return obj.gps_info.address if obj.gps_info else None  # GPS 정보가 없을 경우 None 반환
+
+
+class BookingCountSerializer(serializers.Serializer):
+    total_bookings = serializers.IntegerField()
+
+    def validate_total_bookings(self, value):
+        if value < 0:
+            raise serializers.ValidationError("총 예약 수는 음수가 될 수 없습니다.")
+        return value
