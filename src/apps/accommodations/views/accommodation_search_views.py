@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from apps.accommodations.serializers.accommodations_search_serializer import (
     AccommodationAvailabilityRequestSerializer,
     AccommodationAvailabilityResponseSerializer,
+    KakaoPlaceDataSerializer,
 )
 from apps.accommodations.services.accommodation_service import AccommodationService
 from apps.accommodations.services.geocoding_service import GeocodingService
@@ -72,11 +73,17 @@ class AvailableAccommodationsAPIView(GenericAPIView):
 
         latitude, longitude = CITY_COORDINATES[city]
 
-        # kakao_place = GeocodingService.search_accommodations(latitude=latitude, longitude=longitude)
-        # print(kakao_place)
+        kakao_place_data = GeocodingService.search_accommodations(latitude=latitude, longitude=longitude)
 
-        response_serializer = AccommodationAvailabilityResponseSerializer(
+        accommodation_serializer = AccommodationAvailabilityResponseSerializer(
             accommodations_with_available_rooms, many=True
         )
 
-        return Response(response_serializer.data, status=status.HTTP_200_OK)
+        kakao_place_data_serializer = KakaoPlaceDataSerializer(kakao_place_data, many=True)
+
+        combined_data = {
+            "accommodation_data": accommodation_serializer.data,
+            "kakao_place_data": kakao_place_data_serializer.data,
+        }
+
+        return Response(combined_data, status=status.HTTP_200_OK)

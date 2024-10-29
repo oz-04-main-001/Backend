@@ -51,3 +51,13 @@ class AccommodationAvailabilityResponseSerializer(serializers.ModelSerializer):
     def get_representative_image(self, obj):
         image = obj.images.filter(is_representative=True).first()
         return image.image.url if image else None
+
+
+class KakaoPlaceDataSerializer(serializers.Serializer):
+    place_name = serializers.CharField()
+    road_address_name = serializers.CharField()
+    location = serializers.SerializerMethodField()
+    place_url = serializers.CharField()
+
+    def get_location(self, obj):
+        return (obj["y"], obj["x"])
