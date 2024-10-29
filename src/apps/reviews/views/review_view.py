@@ -1,7 +1,11 @@
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
 from apps.reviews.models import Review
-from apps.reviews.serializers.reviews_serializer import ReviewListCreateSerializer, ReviewDetailUpdateDeleteSerializer
+from apps.reviews.serializers.reviews_serializer import (
+    ReviewDetailUpdateDeleteSerializer,
+    ReviewListCreateSerializer,
+)
 
 
 # 리뷰 생성과, 리스트 반환 api
@@ -16,6 +20,3 @@ class ReviewUpdateDetailView(RetrieveUpdateDestroyAPIView):
     queryset = Review.objects.all()
     serializer_class = ReviewDetailUpdateDeleteSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
-
-
-

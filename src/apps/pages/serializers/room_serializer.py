@@ -38,7 +38,7 @@ class RoomRoomOptionSerializer(serializers.ModelSerializer):
 class RoomInventorySerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomInventory
-        fields = ['count_room']
+        fields = ["count_room"]
 
 
 # 룸 타입 시리얼라이저
@@ -59,7 +59,6 @@ class RoomSerializer(serializers.ModelSerializer):
     bed_info = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
     room_count = serializers.SerializerMethodField()
-
 
     class Meta:
         model = Room
@@ -99,8 +98,6 @@ class RoomSerializer(serializers.ModelSerializer):
         if room_inventory:
             return room_inventory.count_room
         return 0
-
-
 
 
 class RoomDetailSerializer(RoomSerializer):

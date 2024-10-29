@@ -68,7 +68,6 @@ class AccommodationSerializer(serializers.ModelSerializer):
         fields = ["name", "phone_number", "description", "rules"]
 
 
-
 # ######################################
 # 룸 -> 객실정보(방갯수)
 
@@ -177,9 +176,14 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
 class BookingAccommodationInfoSerializer(serializers.ModelSerializer):
     representative_image = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
+
     class Meta:
         model = Accommodation
-        fields = ['name','representative_image','address',]
+        fields = [
+            "name",
+            "representative_image",
+            "address",
+        ]
 
     # 숙소 주소
     def get_address(self, obj: Accommodation) -> Optional[str]:
@@ -198,4 +202,3 @@ class BookingAccommodationInfoSerializer(serializers.ModelSerializer):
         if img:
             return img.image.url
         return None
-

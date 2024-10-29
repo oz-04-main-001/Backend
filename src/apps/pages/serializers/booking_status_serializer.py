@@ -1,17 +1,20 @@
 from typing import Any, Dict, Optional
+
 from rest_framework import serializers
 
 from apps.accommodations.models import Accommodation
 from apps.bookings.models import Booking
 from apps.pages.serializers import room_serializer
-from apps.pages.serializers.accommodation_serializer import BookingAccommodationInfoSerializer
+from apps.pages.serializers.accommodation_serializer import (
+    BookingAccommodationInfoSerializer,
+)
 from apps.pages.services.convention_datetime_service import ConventionDateService
 from apps.pages.services.money_view_service import MoneyViewService
 from apps.rooms.models import Room
 
 
 class BookingStatusSerializer(serializers.ModelSerializer):
-    accommodation_info =serializers.SerializerMethodField()
+    accommodation_info = serializers.SerializerMethodField()
     room_info = serializers.SerializerMethodField()
     check_in_datetime = serializers.SerializerMethodField()
     check_out_datetime = serializers.SerializerMethodField()
