@@ -1,11 +1,11 @@
 from django.contrib.gis.geos import Point
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
 from rest_framework.serializers import as_serializer_error
-from rest_framework.exceptions import ValidationError
-
 from rest_framework_gis.fields import GeometryField
-from django.core.exceptions import ValidationError as DjangoValidationError
+
 from apps.accommodations.models import (
     Accommodation,
     Accommodation_Image,
@@ -37,8 +37,8 @@ class GPSInfoSerializer(serializers.ModelSerializer):
                 if isinstance(location, Point):
                     longitude, latitude = location.x, location.y
                 # GeoJSON 형식으로 들어온 경우
-                elif isinstance(location, dict) and 'coordinates' in location:
-                    longitude, latitude = location['coordinates']
+                elif isinstance(location, dict) and "coordinates" in location:
+                    longitude, latitude = location["coordinates"]
                 else:
                     raise serializers.ValidationError("잘못된 위치 데이터 형식입니다.")
 
@@ -74,13 +74,14 @@ class AccommodationTypeSerializer(serializers.ModelSerializer):
         fields = ["type_name", "is_customized"]
         read_only_fields = ["is_customized"]
         extra_kwargs = {
-            'type_name': {'default': "hotel"},
+            "type_name": {"default": "hotel"},
             # 'is_customized': {'default': False},# is_customized 필드를 옵션으로 설정
         }
+
     def validate(self, data):
-        type_name = data.get('type_name', '').lower()  # 소문자로 변환
-        data['type_name'] = type_name  # 변환된 값을 다시 저장
-        is_customized = data.get('is_customized', False)
+        type_name = data.get("type_name", "").lower()  # 소문자로 변환
+        data["type_name"] = type_name  # 변환된 값을 다시 저장
+        is_customized = data.get("is_customized", False)
         valid_types = [choice[0] for choice in ACCOMMODATION_TYPE_CHOICES]
 
         if not is_customized and type_name not in valid_types:
@@ -92,16 +93,14 @@ class AccommodationTypeSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        validated_data['is_customized'] = False
+        validated_data["is_customized"] = False
         type_name = validated_data.get("type_name").lower()
         # is_customized = validated_data.get("is_customized")
 
         # if not is_customized:
-            # choices에 있는 기본 타입인 경우 항상 생성
+        # choices에 있는 기본 타입인 경우 항상 생성
         obj, created = AccommodationType.objects.get_or_create(
-            type_name=type_name,
-            is_customized=False,
-            defaults={'accommodation': validated_data.get('accommodation')}
+            type_name=type_name, is_customized=False, defaults={"accommodation": validated_data.get("accommodation")}
         )
         return obj
 
@@ -116,10 +115,10 @@ class AccommodationImageSerializer(serializers.ModelSerializer):
         required=True,
         allow_empty_file=True,
         error_messages={
-            'invalid': "유효한 이미지 파일이 아닙니다.",
-            'empty': "이미지 파일이 비어있습니다.",
-            'invalid_image': "올바른 이미지 파일 형식이 아닙니다."
-        }
+            "invalid": "유효한 이미지 파일이 아닙니다.",
+            "empty": "이미지 파일이 비어있습니다.",
+            "invalid_image": "올바른 이미지 파일 형식이 아닙니다.",
+        },
     )
 
     class Meta:
@@ -171,7 +170,6 @@ class AccommodationImageSerializer(serializers.ModelSerializer):
     #         return Accommodation_Image.objects.bulk_create(image_objects)
     #     else:
     #         return Accommodation_Image.objects.create(**validated_data)
-
 
     # def create(self, validated_data):
     #     image_instances = [Accommodation_Image(
@@ -236,24 +234,24 @@ class AccommodationSerializer(serializers.ModelSerializer):
         # host는 view에서 전달받음
         instance = super().create(validated_data)
         # host의 전화번호 설정
-        if hasattr(instance.host, 'phone_number'):
+        if hasattr(instance.host, "phone_number"):
             instance.phone_number = instance.host.phone_number
-        elif hasattr(instance.host.user, 'phone_number'):
+        elif hasattr(instance.host.user, "phone_number"):
             instance.phone_number = instance.host.user.phone_number
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
         # phone_number는 update에서 제외
-        if 'phone_number' in validated_data:
-            del validated_data['phone_number']
+        if "phone_number" in validated_data:
+            del validated_data["phone_number"]
 
         instance = super().update(instance, validated_data)
 
         # host의 전화번호로 업데이트
-        if hasattr(instance.host, 'phone_number'):
+        if hasattr(instance.host, "phone_number"):
             instance.phone_number = instance.host.phone_number
-        elif hasattr(instance.host.user, 'phone_number'):
+        elif hasattr(instance.host.user, "phone_number"):
             instance.phone_number = instance.host.user.phone_number
         instance.save()
         return instance

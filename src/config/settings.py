@@ -254,7 +254,7 @@ SPECTACULAR_SETTINGS = {
         {"name": "Guest", "description": "Guest API"},
         {"name": "Host", "description": "Host API"},
     ],
-    'COMPONENT_SPLIT_REQUEST': True,
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 

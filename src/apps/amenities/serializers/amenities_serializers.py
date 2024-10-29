@@ -8,8 +8,7 @@ from apps.common.choices import AMENITY_CHOICES
 
 class AmenitySerializer(serializers.ModelSerializer):
     name = serializers.ChoiceField(
-        choices=AMENITY_CHOICES,
-        validators=[MinLengthValidator(2, "Name must be at least 2 characters long")]
+        choices=AMENITY_CHOICES, validators=[MinLengthValidator(2, "Name must be at least 2 characters long")]
     )
     display_name = serializers.SerializerMethodField()
 
@@ -17,6 +16,7 @@ class AmenitySerializer(serializers.ModelSerializer):
         model = Amenity
         fields = ["id", "name", "display_name", "category", "is_custom"]
         read_only_fields = ["id", "category"]  # category를 읽기 전용으로 설정
+
     def get_display_name(self, obj):
         """Return the human-readable name for the selected amenity"""
         return dict(AMENITY_CHOICES).get(obj.name, obj.name)
@@ -35,7 +35,7 @@ class AmenitySerializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
         """Ensure the name is one of the valid choices unless it's a custom amenity"""
-        if not self.initial_data.get('is_custom', False):
+        if not self.initial_data.get("is_custom", False):
             if value not in dict(AMENITY_CHOICES):
                 raise serializers.ValidationError(
                     f"Invalid amenity name. Must be one of: {', '.join(dict(AMENITY_CHOICES).keys())}"
@@ -49,15 +49,17 @@ class AmenitySerializer(serializers.ModelSerializer):
             return super().to_internal_value(data)
 
     def create(self, validated_data):
-        validated_data['category'] = 'basic'
+        validated_data["category"] = "basic"
         if isinstance(validated_data, list):
             amenitie_objects = [Amenity(**data) for data in validated_data]
             return Amenity.objects.bulk_create(amenitie_objects)
         else:
             return Amenity.objects.create(**validated_data)
 
+
 class AccommodationAmenitySerializer(serializers.ModelSerializer):
     """숙소 부대시설 조회용 시리얼라이저"""
+
     amenity = AmenitySerializer(read_only=True)
     amenity_id = serializers.PrimaryKeyRelatedField(queryset=Amenity.objects.all(), write_only=True)
 
@@ -68,6 +70,7 @@ class AccommodationAmenitySerializer(serializers.ModelSerializer):
         # extra_kwargs = {
         #     'custom_value': {'required': False, 'allow_null': True}
         # }
+
     def validate(self, data):
         # 커스텀 어메니티의 경우 custom_value가 필수
         if data.get("amenity_id").is_custom and not data.get("custom_value"):
@@ -91,11 +94,12 @@ class AccommodationAmenitySerializer(serializers.ModelSerializer):
 
 class AccommodationAmenityListSerializer(serializers.ModelSerializer):
     """숙소 부대시설 목록 조회용 시리얼라이저"""
-    amenities = AccommodationAmenitySerializer(many=True, read_only=True, source='accommodationamenity_set')
+
+    amenities = AccommodationAmenitySerializer(many=True, read_only=True, source="accommodationamenity_set")
 
     class Meta:
         model = AccommodationAmenity
-        fields = ['amenities']
+        fields = ["amenities"]
 
 
 # class AccommodationAmenityBulkUpdateSerializer(serializers.Serializer):
@@ -180,6 +184,7 @@ class AccommodationAmenityListSerializer(serializers.ModelSerializer):
 
 class AccommodationAmenityUpdateSerializer(serializers.ModelSerializer):
     """숙소 부대시설 수정용 시리얼라이저"""
+
     amenities = serializers.ListField(
         child=serializers.DictField(),
         write_only=True,
@@ -203,7 +208,7 @@ class AccommodationAmenityUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-        amenities_data = validated_data.get('amenities', [])
+        amenities_data = validated_data.get("amenities", [])
 
         # 기존 부대시설 삭제
         AccommodationAmenity.objects.filter(accommodation=instance.accommodation).delete()
@@ -212,28 +217,26 @@ class AccommodationAmenityUpdateSerializer(serializers.ModelSerializer):
         new_amenities = []
         for amenity_data in amenities_data:
             if isinstance(amenity_data, dict):
-                if 'id' in amenity_data:
+                if "id" in amenity_data:
                     # 기존 어메니티 재사용
                     try:
-                        amenity = Amenity.objects.get(id=amenity_data['id'])
+                        amenity = Amenity.objects.get(id=amenity_data["id"])
                     except Amenity.DoesNotExist:
                         raise serializers.ValidationError(f"Amenity with id {amenity_data['id']} does not exist")
                 else:
                     # 새로운 어메니티 생성 또는 기존 것 찾기
                     amenity, _ = Amenity.objects.get_or_create(
-                        name=amenity_data['name'],
+                        name=amenity_data["name"],
                         defaults={
-                            'category': amenity_data.get('category', 'basic'),
-                            'is_custom': amenity_data.get('is_custom', False)
-                        }
+                            "category": amenity_data.get("category", "basic"),
+                            "is_custom": amenity_data.get("is_custom", False),
+                        },
                     )
 
-                custom_value = amenity_data.get('custom_value') if amenity.is_custom else None
+                custom_value = amenity_data.get("custom_value") if amenity.is_custom else None
                 new_amenities.append(
                     AccommodationAmenity(
-                        accommodation=instance.accommodation,
-                        amenity=amenity,
-                        custom_value=custom_value
+                        accommodation=instance.accommodation, amenity=amenity, custom_value=custom_value
                     )
                 )
 

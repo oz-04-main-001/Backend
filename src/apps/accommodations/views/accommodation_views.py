@@ -5,12 +5,18 @@ from django.contrib.gis.geos import Point
 from django.db import transaction
 from django.db.models import Avg, Q
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, OpenApiResponse, inline_serializer
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
+    inline_serializer,
+)
 from rest_framework import filters, generics, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.fields import ListField, FileField, ImageField, DictField
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.fields import DictField, FileField, ImageField, ListField
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +29,7 @@ from apps.accommodations.models import (
     GPS_Info,
     RefundPolicy,
 )
+from apps.accommodations.serializers import accommodation_serializer as serializers
 from apps.accommodations.serializers.accommodation_serializer import (
     AccommodationImageSerializer,
     AccommodationImageUpdateSerializer,
@@ -32,11 +39,14 @@ from apps.accommodations.serializers.accommodation_serializer import (
     GPSInfoSerializer,
     RefundPolicySerializer,
 )
-from apps.accommodations.serializers import accommodation_serializer as serializers
 from apps.amenities.models import AccommodationAmenity, Amenity
+from apps.amenities.serializers.amenities_serializers import (
+    AccommodationAmenitySerializer,
+    AmenitySerializer,
+)
 from apps.common.choices import AMENITY_CHOICES
 from apps.users.models import BusinessUser
-from apps.amenities.serializers.amenities_serializers import AmenitySerializer, AccommodationAmenitySerializer
+
 User = get_user_model()
 
 
@@ -60,38 +70,32 @@ class BaseAccommodationView:
 
 class AccommodationListCreateView(BaseAccommodationView, APIView):
     """숙소 목록 조회 및 생성"""
-    parser_classes = (MultiPartParser,FormParser)
+
+    parser_classes = (MultiPartParser, FormParser)
     serializer_class = AccommodationSerializer
     permission_classes = [AllowAny]  # [isauthentication, ishost]
 
     @extend_schema(
         request=inline_serializer(
-            name='AccommodationCreateRequest',
+            name="AccommodationCreateRequest",
             fields={
-                'accommodation': serializers.AccommodationSerializer(),
-                'images': ListField(
-                    child=ImageField(),
-                    help_text="숙소에 업로드할 이미지 파일들"
+                "accommodation": serializers.AccommodationSerializer(),
+                "images": ListField(child=ImageField(), help_text="숙소에 업로드할 이미지 파일들"),
+                "accommodation_type": serializers.AccommodationTypeSerializer(),
+                "GPS_info": serializers.GPSInfoSerializer(),
+                "amenities": inline_serializer(
+                    name="AmenitiesRequest",
+                    fields={"new": AmenitySerializer(many=True), "default": AccommodationAmenitySerializer(many=True)},
                 ),
-                'accommodation_type': serializers.AccommodationTypeSerializer(),
-                'GPS_info': serializers.GPSInfoSerializer(),
-                'amenities': inline_serializer(
-                    name='AmenitiesRequest',
-                    fields={
-                        'new': AmenitySerializer(many=True),
-                        'default': AccommodationAmenitySerializer(many=True)
-                    }
-                )
-            }
+            },
         ),
         responses={
             status.HTTP_201_CREATED: OpenApiResponse(
-                response=serializers.AccommodationSerializer,
-                description="숙소가 성공적으로 생성되었습니다."
+                response=serializers.AccommodationSerializer, description="숙소가 성공적으로 생성되었습니다."
             ),
             status.HTTP_400_BAD_REQUEST: OpenApiResponse(
                 response={"type": "object", "properties": {"detail": {"type": "string"}, "code": {"type": "string"}}},
-                description="잘못된 요청: 입력 값이 유효하지 않습니다."
+                description="잘못된 요청: 입력 값이 유효하지 않습니다.",
             ),
         },
         summary="숙소 생성",
@@ -100,11 +104,11 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
     def post(self, request):
         try:
             data = {
-                'accommodation': json.loads(request.data.get('accommodation')),
-                'accommodation_type': json.loads(request.data.get('accommodation_type')),
-                'GPS_info': json.loads(request.data.get('GPS_info')),
-                'amenities': json.loads(request.data.get('amenities')),
-                'images': request.FILES.getlist("images")
+                "accommodation": json.loads(request.data.get("accommodation")),
+                "accommodation_type": json.loads(request.data.get("accommodation_type")),
+                "GPS_info": json.loads(request.data.get("GPS_info")),
+                "amenities": json.loads(request.data.get("amenities")),
+                "images": request.FILES.getlist("images"),
             }
 
             request_data = self.validate_accommodation_data(data)
@@ -140,9 +144,7 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
             type_serializer.save(accommodation=accommodation)
 
             # 4. create GPS Info
-            gps_serializer = serializers.GPSInfoSerializer(
-                data=request_data.get("GPS_info")
-            )
+            gps_serializer = serializers.GPSInfoSerializer(data=request_data.get("GPS_info"))
             if not gps_serializer.is_valid():
                 return Response(gps_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             gps_serializer.save(accommodation=accommodation)
@@ -161,9 +163,7 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
 
                     # 새로 생성된 어메니티를 숙소와 연결
                     AccommodationAmenity.objects.create(
-                        accommodation=accommodation,
-                        amenity=created_amenity,
-                        custom_value=None  # 또는 필요한 값
+                        accommodation=accommodation, amenity=created_amenity, custom_value=None  # 또는 필요한 값
                     )
                     amenity_response_data.append(new_amenity_serializer.data)
 
@@ -176,27 +176,26 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
                             AccommodationAmenity.objects.create(
                                 accommodation=accommodation,
                                 amenity=amenity,
-                                custom_value=default_amenity.get("custom_value", None)
+                                custom_value=default_amenity.get("custom_value", None),
                             )
                         except Amenity.DoesNotExist:
                             return Response(
                                 {"error": f"Amenity with id {amenity_id} does not exist"},
-                                status=status.HTTP_400_BAD_REQUEST
+                                status=status.HTTP_400_BAD_REQUEST,
                             )
             return Response(
                 {
-                    "accommodation": accommodation_serializer.data, "\n"
-                    "accommodation_type": type_serializer.data, "\n"
-                    "gps_info": gps_serializer.data, "\n"
-                    "amenities": amenity_response_data, "\n"
-                    "images": image_response_data
-                }, status=status.HTTP_201_CREATED)
+                    "accommodation": accommodation_serializer.data,
+                    "\n" "accommodation_type": type_serializer.data,
+                    "\n" "gps_info": gps_serializer.data,
+                    "\n" "amenities": amenity_response_data,
+                    "\n" "images": image_response_data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
 
         except json.JSONDecodeError as e:
-            return Response({
-                "error": "잘못된 JSON 형식입니다.",
-                "details": str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "잘못된 JSON 형식입니다.", "details": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except ValidationError as e:
             return Response({"error": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -380,20 +379,17 @@ class AmenityChoicesView(APIView):
     @extend_schema(
         summary="어메니티 선택지 목록 조회",
         description="사용 가능한 어메니티 선택지 목록을 반환합니다.",
-        responses={200: {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "value": {"type": "string"},
-                    "label": {"type": "string"}
-                }
+        responses={
+            200: {
+                "type": "array",
+                "items": {"type": "object", "properties": {"value": {"type": "string"}, "label": {"type": "string"}}},
             }
-        }}
+        },
     )
     def get(self, request):
         choices = [choice[0] for choice in AMENITY_CHOICES]  # value만 반환
         return Response(choices)
+
 
 # views.py에 추가
 # class RefundPolicyView(generics.RetrieveUpdateDestroyAPIView):

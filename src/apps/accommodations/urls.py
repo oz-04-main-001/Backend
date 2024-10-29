@@ -40,7 +40,7 @@ urlpatterns = [
         amenities_views.AccommodationAmenityView.as_view(),
         name="accommodation-amenities",
     ),
-    path('amenity-choices/', AmenityChoicesView.as_view(), name='amenity-choices'),
+    path("amenity-choices/", AmenityChoicesView.as_view(), name="amenity-choices"),
     # path("<int:accommodation_id>/refund-policy/", views.RefundPolicyView.as_view(), name="accommodation-refund-policy"),
     path("search/", AvailableAccommodationsAPIView.as_view(), name="accommodation-search"),
 ]
