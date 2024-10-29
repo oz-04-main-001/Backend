@@ -38,7 +38,7 @@ class RoomRoomOptionSerializer(serializers.ModelSerializer):
 class RoomInventorySerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomInventory
-        fields = "__all__"
+        fields = ["count_room"]
 
 
 # 룸 타입 시리얼라이저
@@ -58,6 +58,7 @@ class BedSerializer(serializers.ModelSerializer):
 class RoomSerializer(serializers.ModelSerializer):
     bed_info = serializers.SerializerMethodField()
     price = serializers.SerializerMethodField()
+    room_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Room
@@ -71,6 +72,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "check_in_time",
             "check_out_time",
             "bed_info",
+            "room_count",
         ]
 
     def get_price(self, obj: Room) -> str:
@@ -85,6 +87,17 @@ class RoomSerializer(serializers.ModelSerializer):
         bed_type_num = dict(set((option.option.name, option.custom_value) for option in bed_options))
 
         return {"total_beds": bed_total_count, "bed_type_num": bed_type_num}
+
+    # def get_room_inventory(self, obj: Room) -> int:
+    #     room_inventory = RoomInventory.objects.filter(room=obj.id)
+    #     serializer = RoomInventorySerializer(room_inventory, many=True)
+    #     return serializer.data
+
+    def get_room_count(self, obj: Room) -> int:
+        room_inventory = RoomInventory.objects.filter(room=obj.id).first()
+        if room_inventory:
+            return room_inventory.count_room
+        return 0
 
 
 class RoomDetailSerializer(RoomSerializer):
