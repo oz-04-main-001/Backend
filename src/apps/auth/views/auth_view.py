@@ -1,3 +1,4 @@
+import datetime
 from typing import Any
 
 from drf_spectacular.utils import extend_schema
@@ -51,6 +52,12 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
         email = validated_data.get("email")
         self.otp_service.send_otp_email(email)
 
+        birth_date = validated_data.get("birth_date")
+        if isinstance(birth_date, datetime.date):
+            birth_date = birth_date.strftime("%Y-%m-%d")  # 'YYYY-MM-DD' 형식으로 변환
+
+        validated_data["birth_date"] = birth_date
+
         self.otp_service.save_user_data(validated_data)
 
         return Response(
@@ -74,7 +81,7 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
     )
     def post(self, request, *args, **kwargs):
         user_data = self.otp_service.get_user_data(request.data.get("email"))
-        print(user_data)
+
         serializer = self.get_serializer(data=request.data, context={"user_data": user_data})
         serializer.is_valid(raise_exception=True)
 
@@ -83,7 +90,8 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
         email = validated_data.get("email")
         user_validated_data = validated_data.get("user_data")
 
-        self.otp_service.delete_otp_from_redis(email)
+        self.otp_service.delete_otp_from_redis(email=email)
+        self.otp_service.delete_user_data(email=email)
 
         self.user_auth_service.create_user(validated_data=user_validated_data)
 
@@ -276,9 +284,8 @@ class PasswordResetRequestAPIView(GenericAPIView):
 
         email = serializer.validated_data["email"]
 
-        request.session["reset_email"] = email
-
-        self.otp_service.send_otp_email(email)
+        otp = self.otp_service.send_otp_email(email)
+        self.otp_service.save_data(f"email:{otp}", email)
 
         return Response(
             {"message": "OTP has been sent to your email."},
@@ -300,15 +307,12 @@ class PasswordResetVerifyAPIView(GenericAPIView):
     )
     def post(self, request, *args, **kwargs):
 
-        email = request.session.get("reset_email")
+        otp = request.data.get("otp")
+        email = self.otp_service.get_data(key=f"email:{otp}")
         serializer = self.get_serializer(data=request.data, context={"email": email})
         serializer.is_valid(raise_exception=True)
 
-        email = serializer.validated_data.get("email")
-
-        self.otp_service.delete_otp(email)
-
-        request.session["otp_verified"] = True
+        self.otp_service.delete_otp_from_redis(email)
 
         return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
 
@@ -327,14 +331,13 @@ class PasswordResetAPIView(GenericAPIView):
     )
     def patch(self, request: Request, *args: Any, **kwargs: Any) -> Response:
 
-        email = request.session.get("reset_email")
-        otp_verified = request.session.get("otp_verified", False)
+        otp = request.data.get("otp")
+        email = self.otp_service.get_data(f"email:{otp}")
 
         serializer = self.get_serializer(
             data=request.data,
             context={
                 "email": email,
-                "otp_verified": otp_verified,
             },
         )
 
@@ -345,8 +348,7 @@ class PasswordResetAPIView(GenericAPIView):
 
         self.user_auth_service.set_user_password(user, password)
 
-        del request.session["reset_email"]
-        del request.session["otp_verified"]
+        self.otp_service.delete_data(f"email:{otp}")
 
         return Response(
             {"message": "Password has been reset successfully."},
