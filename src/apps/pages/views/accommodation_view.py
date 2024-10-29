@@ -11,6 +11,7 @@ from apps.accommodations.services.accommodation_service import AccommodationServ
 from apps.pages.serializers.accommodation_serializer import (
     AccommodationDetailSerializer,
     AccommodationRequestSerializer,
+    AccommodationResponseSerializer,
 )
 
 
@@ -22,7 +23,7 @@ class AccommodationDetailView(GenericAPIView):
 
     @extend_schema(
         request=AccommodationRequestSerializer,
-        responses={200: AccommodationDetailSerializer(many=True)},
+        responses={200: AccommodationResponseSerializer(many=True)},
         summary="숙박 업소 디테일",
         description="capacity: 기준 인원 / max_capacity: 최대 인원",
         parameters=[
@@ -56,12 +57,13 @@ class AccommodationDetailView(GenericAPIView):
         check_out_date = validated_data["check_out_date"]
         guests_count = validated_data["guests_count"]
 
-        accommodations = AccommodationService.get_accommodation_detail_with_available_rooms(
+        accommodation_data = AccommodationService.get_accommodation_detail_with_available_rooms(
             accommodation_id=accommodation_id,
             check_in_date=check_in_date,
             check_out_date=check_out_date,
             guests_count=guests_count,
         )
 
-        serializer = AccommodationDetailSerializer(accommodations, many=True)
+        serializer = AccommodationResponseSerializer(accommodation_data)
+
         return Response(serializer.data, status=status.HTTP_200_OK)

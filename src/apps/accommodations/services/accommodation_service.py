@@ -26,11 +26,20 @@ class AccommodationService:
         # 지정된 ID로 숙소 조회
         accommodation = Accommodation.objects.filter(id=accommodation_id, is_active=True).first()
 
-        # 예약 가능한 방 필터링
+        all_rooms = Room.objects.filter(accommodation=accommodation)
+
         available_rooms = (
-            Room.objects.filter_available_room(accommodation, guests_count)
+            all_rooms.filter_available_room(accommodation, guests_count)
             .annotate_overlapping_bookings(check_in_date, check_out_date)
             .filter_rooms_with_sufficient_inventory()
         )
 
-        return Accommodation.objects.filter_by_available_rooms(available_rooms)
+        unavailable_rooms = all_rooms.exclude(id__in=available_rooms.values_list("id", flat=True))
+
+        accommodation_data = {
+            "accommodation": accommodation,  # Accommodation 객체
+            "available_rooms": available_rooms,  # 예약 가능한 Room 쿼리셋
+            "unavailable_rooms": unavailable_rooms,  # 예약 불가능한 Room 쿼리셋
+        }
+
+        return accommodation_data

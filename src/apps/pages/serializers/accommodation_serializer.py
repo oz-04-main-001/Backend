@@ -11,8 +11,7 @@ from apps.accommodations.models import (
     AccommodationType,
 )
 from apps.amenities.models import AccommodationAmenity, Amenity
-from apps.pages.serializers.room_serializer import RoomImagesSerializer, RoomSerializer
-from apps.rooms.models import Room, Room_Image
+from apps.pages.serializers.room_serializer import RoomResponseSerializer
 
 
 # 호텔 주소 시리얼라이저
@@ -85,7 +84,6 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
     accommodation_img = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
     min_price = serializers.SerializerMethodField()
-    rooms = serializers.SerializerMethodField()
     refund_policy = serializers.SerializerMethodField()
     accommodation_amenity = serializers.SerializerMethodField()
     accommodation_type = serializers.SerializerMethodField()
@@ -97,7 +95,6 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             "accommodation_info",
             "address",
             "min_price",
-            "rooms",
             "accommodation_amenity",
             "refund_policy",
             "accommodation_type",
@@ -131,33 +128,6 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
     def get_min_price(self, obj: Accommodation) -> Optional[int]:
         min_price = obj.room_set.order_by("price").first()
         return min_price.price if min_price else None
-
-    # 룸정보 + 룸대표이미지
-    def get_rooms(self, obj: Accommodation) -> List[Dict[str, Union[str, Optional[str]]]]:
-        rooms = Room.objects.filter(accommodation=obj)
-        room_list = []
-
-        for room in rooms:
-            room_serializer = RoomSerializer(room)
-            room_dict = room_serializer.data
-
-            # 현재 room에 해당하는 이미지들을 가져옵니다.
-            room_images = Room_Image.objects.filter(room_id=room.id)
-
-            # 대표 이미지가 담길 변수
-            representative_image = None
-
-            # room에 대한 이미지를 순회하며 대표 이미지를 찾습니다.
-            for image in room_images:
-                if image.is_representative:
-                    representative_image = image.image.url
-                    break
-
-            # 직렬화된 데이터에 'images' 필드로 대표 이미지를 추가
-            room_dict["images"] = representative_image
-            room_list.append(room_dict)
-
-        return room_list
 
     def get_accommodation_amenity(self, obj: Accommodation) -> List[Dict[str, Union[str, bool]]]:
         accommodation_amenities = AccommodationAmenity.objects.filter(accommodation=obj)
@@ -239,3 +209,27 @@ class AccommodationRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError("최대 30일 이내로 예약이 가능합니다.")
 
         return data
+
+
+class AccommodationResponseSerializer(serializers.Serializer):
+    accommodation = AccommodationDetailSerializer()
+    available_rooms = RoomResponseSerializer(many=True)
+    unavailable_rooms = RoomResponseSerializer(many=True)
+
+    # def to_representation(self, instance):
+    #
+    #     return {
+    #         "accommodation": AccommodationDetailSerializer(instance["accommodation"]).data,
+    #         "available_rooms": RoomResponseSerializer(instance["available_rooms"], many=True).data,
+    #         "unavailable_rooms": RoomResponseSerializer(instance["unavailable_rooms"], many=True).data,
+    #     }
+    def to_representation(self, instance):
+        print(type(instance))
+        print(instance)
+        if isinstance(instance, dict):
+            return {
+                "accommodation": AccommodationDetailSerializer(instance.get("accommodation")).data,
+                "available_rooms": RoomResponseSerializer(instance.get("available_rooms"), many=True).data,
+                "unavailable_rooms": RoomResponseSerializer(instance.get("unavailable_rooms"), many=True).data,
+            }
+        raise TypeError("Instance must be a dictionary.")
