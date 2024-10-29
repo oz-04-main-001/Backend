@@ -4,6 +4,4 @@ from . import views
 
 app_name = "reviews"  # 앱 이름 설정
 
-urlpatterns: list = [
-
-]
+urlpatterns: list = []
