@@ -1,20 +1,18 @@
 from typing import Any, Dict, Optional
-
 from rest_framework import serializers
 
+from apps.accommodations.models import Accommodation
 from apps.bookings.models import Booking
 from apps.pages.serializers import room_serializer
-from apps.pages.services.booking_total_price_service import BookingTotalPriceService
+from apps.pages.serializers.accommodation_serializer import BookingAccommodationInfoSerializer
 from apps.pages.services.convention_datetime_service import ConventionDateService
 from apps.pages.services.money_view_service import MoneyViewService
 from apps.rooms.models import Room
-from apps.users.models import User
-from apps.users.serializers import ui_booking_user_serializer
 
 
 class BookingStatusSerializer(serializers.ModelSerializer):
-    room = serializers.SerializerMethodField()
-    # booking_user_info = serializers.SerializerMethodField()
+    accommodation_info =serializers.SerializerMethodField()
+    room_info = serializers.SerializerMethodField()
     check_in_datetime = serializers.SerializerMethodField()
     check_out_datetime = serializers.SerializerMethodField()
     total_price = serializers.SerializerMethodField()
@@ -23,15 +21,15 @@ class BookingStatusSerializer(serializers.ModelSerializer):
         model = Booking
         fields = "__all__"
 
-    def get_room(self, obj: Booking) -> Dict[str, Any]:
+    def get_accommodation_info(self, obj):
+        accommodation = Accommodation.objects.get(id=obj.room.accommodation_id)
+        serializer = BookingAccommodationInfoSerializer(accommodation)
+        return serializer.data
+
+    def get_room_info(self, obj: Booking) -> Dict[str, Any]:
         room = Room.objects.get(pk=obj.room_id)
         serializer = room_serializer.RoomSerializer(room)
         return serializer.data
-
-    # def get_booking_user_info(self, obj: Booking) -> Dict[str, Any]:
-    #     user_info = User.objects.get(pk=obj.guest_id)
-    #     serializer = ui_booking_user_serializer.BookingUserSerializer(user_info)
-    #     return serializer.data
 
     def get_check_in_datetime(self, obj: Booking):
         check_in_date = Booking.objects.get(id=obj.id).check_in_datetime

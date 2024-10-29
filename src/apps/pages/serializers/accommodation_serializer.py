@@ -68,8 +68,9 @@ class AccommodationSerializer(serializers.ModelSerializer):
         fields = ["name", "phone_number", "description", "rules"]
 
 
+
 # ######################################
-# 룸 -> 객실정보(기준인원, 침대싸이즈, 침대갯수, 방갯수)
+# 룸 -> 객실정보(방갯수)
 
 
 class AccommodationDetailSerializer(serializers.ModelSerializer):
@@ -170,3 +171,31 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
         refund_policy = RefundPolicy.objects.filter(accommodation=obj)
         refund_policy_serializer = AccommodationRefundPolicySerializer(refund_policy, many=True)
         return refund_policy_serializer.data
+
+
+# 예약디테일에 들어갈 호텔 정보
+class BookingAccommodationInfoSerializer(serializers.ModelSerializer):
+    representative_image = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+    class Meta:
+        model = Accommodation
+        fields = ['name','representative_image','address',]
+
+    # 숙소 주소
+    def get_address(self, obj: Accommodation) -> Optional[str]:
+        gps_info = GPS_Info.objects.filter(accommodation=obj)
+        serializer = AccommodationAddressSerializer(gps_info, many=True)
+        address_data = serializer.data[0] if serializer.data else None
+        if address_data:
+            return (
+                f"{address_data['city']} {address_data['states']} {address_data['road_name']} {address_data['address']}"
+            )
+        return None
+
+    # 숙소 대표이미지
+    def get_representative_image(self, obj: Accommodation) -> Optional[str]:
+        img = Accommodation_Image.objects.filter(accommodation=obj, is_representative=True).first()
+        if img:
+            return img.image.url
+        return None
+
