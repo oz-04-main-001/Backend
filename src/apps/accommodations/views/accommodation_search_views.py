@@ -9,6 +9,8 @@ from apps.accommodations.serializers.accommodations_search_serializer import (
     AccommodationAvailabilityResponseSerializer,
 )
 from apps.accommodations.services.accommodation_service import AccommodationService
+from apps.accommodations.services.geocoding_service import GeocodingService
+from apps.common.choices import STATE_COORDINATES
 
 
 @extend_schema(tags=["Guest-Search"])
@@ -67,6 +69,11 @@ class AvailableAccommodationsAPIView(GenericAPIView):
         accommodations_with_available_rooms = AccommodationService.get_accommodations_with_available_rooms(
             state=state, guests_count=guests_count, check_in_date=check_in_date, check_out_date=check_out_date
         )
+
+        latitude, longitude = STATE_COORDINATES[state]
+
+        kakao_place = GeocodingService.search_accommodations(latitude=latitude, longitude=longitude)
+        print(kakao_place)
 
         response_serializer = AccommodationAvailabilityResponseSerializer(
             accommodations_with_available_rooms, many=True

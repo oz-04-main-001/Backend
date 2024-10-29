@@ -41,7 +41,9 @@ class RoomQuerySet(models.QuerySet):
                 Count(
                     "booking",
                     filter=Q(
-                        booking__check_out_datetime__gt=check_in_date, booking__check_in_datetime__lt=check_out_date
+                        booking__check_out_datetime__gt=check_in_date,
+                        booking__check_in_datetime__lt=check_out_date,
+                        booking__status__in=["pending", "confirmed", "paid", "partially_paid", "check_in"],
                     ),
                 ),
                 0,

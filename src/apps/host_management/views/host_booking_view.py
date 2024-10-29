@@ -161,6 +161,7 @@ class CompleteBookingsView(generics.GenericAPIView):
         )
 
         serializer = BookingSerializer(booking_list, many=True)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
