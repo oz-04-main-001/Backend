@@ -145,7 +145,7 @@ class BookingRequestCheckSerializer(serializers.Serializer):
 
     def validate_booking_id(self, booking_id: int) -> int:
         try:
-            booking = Booking.objects.get_by_booking_id(id=booking_id)
+            booking = Booking.objects.get_by_booking_id(booking_id=booking_id)
             self.context["booking"] = booking
         except Booking.DoesNotExist:
             raise serializers.ValidationError("Invalid booking ID.")
@@ -213,7 +213,37 @@ class AccommodationHostManagementSerializer(serializers.ModelSerializer):
         return obj.gps_info.address if obj.gps_info else None  # GPS 정보가 없을 경우 None 반환
 
 
-class BookingCountSerializer(serializers.Serializer):
+class BookingCountRequestSerializer(serializers.Serializer):
+    month = serializers.IntegerField(required=True)
+    year = serializers.IntegerField(default=datetime.now().year)
+    status_list = serializers.ListField(
+        child=serializers.CharField(),
+        default=["confirmed", "paid", "partially_paid", "check_in"],
+    )
+
+    def validate_month(self, value):
+        if not 1 <= value <= 12:
+            raise serializers.ValidationError("Month must be between 1 and 12.")
+        return value
+
+    def validate_year(self, value):
+        current_year = datetime.now().year
+        if value > current_year:
+            raise serializers.ValidationError("Year cannot be in the future.")
+        return value
+
+    def validate_status_list(self, value):
+        valid_statuses = {"confirmed", "paid", "partially_paid", "check_in"}
+
+        invalid_statuses = [status for status in value if status not in valid_statuses]
+
+        if invalid_statuses:
+            raise serializers.ValidationError(f"Invalid statuses: {', '.join(invalid_statuses)}")
+        return value
+
+
+class BookingCountResponseSerializer(serializers.Serializer):
+    date = serializers.DateField()
     total_bookings = serializers.IntegerField()
 
     def validate_total_bookings(self, value):

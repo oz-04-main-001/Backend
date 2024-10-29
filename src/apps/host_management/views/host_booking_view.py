@@ -1,5 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 
+from django.db.models import Count
+from django.db.models.functions import TruncDate
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import generics, status
@@ -12,10 +14,11 @@ from apps.common.permissions.host_permission import IsHost
 from apps.host_management.serializers.host_management_serializers import (
     AccommodationHostManagementSerializer,
     BookingCheckSerializer,
-    BookingCountSerializer,
+    BookingCountResponseSerializer,
     BookingRequestCheckSerializer,
     BookingSerializer,
     BookingStatisticsSerializer,
+    BookingCountRequestSerializer,
 )
 
 
@@ -190,14 +193,32 @@ class TotalBookingCountView(generics.GenericAPIView):
     """총 예약 건수"""
 
     permission_classes = (IsAuthenticated, IsHost)
-    serializer_class = BookingCountSerializer
+    serializer_class = BookingCountResponseSerializer
 
     @extend_schema(
-        responses={status.HTTP_200_OK: BookingCountSerializer()},
+        request=BookingCountRequestSerializer,
+        responses={status.HTTP_200_OK: BookingCountResponseSerializer()},
         description="호스트의 숙소에 대한 총 예약 수를 반환합니다.",
+        parameters=[
+            OpenApiParameter(
+                name="month",
+                description="예약 건수를 조회할 월을 나타내는 숫자입니다 (1~12).",
+                required=True,
+                type=OpenApiTypes.INT,
+            ),
+        ],
     )
     def get(self, request, *args, **kwargs):
-        total_bookings = Booking.objects.filter(host=request.user).count()
+        serializer = BookingCountRequestSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
 
-        serializer = BookingCountSerializer({"total_bookings": total_bookings})
+        daily_bookings = Booking.objects.filter_daily_bookings(
+            host_profile=request.user.business_profile,
+            month=validated_data["month"],
+            year=validated_data["year"],
+            status_list=validated_data["status_list"],
+        )
+
+        serializer = BookingCountResponseSerializer(daily_bookings, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

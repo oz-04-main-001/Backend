@@ -23,6 +23,14 @@ class OTPService:
         return redis_client.get(f"otp:{email}")
 
     @staticmethod
+    def save_user_data(user_data: dict) -> None:
+        redis_client.hmset(f"user:{user_data['email']}", user_data)
+
+    @staticmethod
+    def get_user_data(email: str) -> dict:
+        return redis_client.hgetall(f"user:{email}")
+
+    @staticmethod
     def delete_otp_from_redis(email: str) -> None:
         redis_client.delete(f"otp:{email}")
 
@@ -34,6 +42,3 @@ class OTPService:
         message = f"Your OTP code is {otp}. It will expire in 10 minutes."
         email = to_email if isinstance(to_email, list) else [to_email]
         send_mail(subject, message, settings.EMAIL_HOST_USER, email)
-
-    def delete_otp(self, email: str) -> None:
-        self.delete_otp_from_redis(email)

@@ -51,7 +51,7 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
         email = validated_data.get("email")
         self.otp_service.send_otp_email(email)
 
-        request.session["user_data"] = validated_data
+        self.otp_service.save_user_data(validated_data)
 
         return Response(
             {"message": "OTP has been sent to your email. Please verify."},
@@ -73,8 +73,8 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
         description="해당 API는 OTP 검증을 위한 api입니다.",
     )
     def post(self, request, *args, **kwargs):
-        user_data = request.session.get("user_data")
-
+        user_data = self.otp_service.get_user_data(request.data.get("email"))
+        print(user_data)
         serializer = self.get_serializer(data=request.data, context={"user_data": user_data})
         serializer.is_valid(raise_exception=True)
 
@@ -83,11 +83,9 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
         email = validated_data.get("email")
         user_validated_data = validated_data.get("user_data")
 
-        self.otp_service.delete_otp(email)
+        self.otp_service.delete_otp_from_redis(email)
 
         self.user_auth_service.create_user(validated_data=user_validated_data)
-
-        del request.session["user_data"]
 
         return Response(
             {"message": "OTP verified and user created successfully."},
