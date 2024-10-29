@@ -67,6 +67,7 @@ THIRD_PARTY_APPS = [
     "channels",  # Django Channels
     "django_apscheduler",  # APScheduler
     "rest_framework",  # Django Rest Framework
+    "rest_framework_gis",
     "rest_framework_simplejwt",  # DRF Simple JWT
     "rest_framework_simplejwt.token_blacklist",  # DRF Simple JWT BlackList
     "drf_spectacular",  # DRF Spectacular (API 문서화)
@@ -253,6 +254,7 @@ SPECTACULAR_SETTINGS = {
         {"name": "Guest", "description": "Guest API"},
         {"name": "Host", "description": "Host API"},
     ],
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 
