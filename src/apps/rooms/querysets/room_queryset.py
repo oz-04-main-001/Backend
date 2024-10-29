@@ -35,6 +35,14 @@ class RoomQuerySet(models.QuerySet):
             & Q(is_available=True)
         )
 
+    def filter_available_room(self, accommodation, guests_count):
+        return self.filter(
+            Q(accommodation=accommodation)
+            & Q(capacity__lte=guests_count)
+            & Q(max_capacity__gte=guests_count)
+            & Q(is_available=True)
+        )
+
     def annotate_overlapping_bookings(self, check_in_date, check_out_date):
         return self.annotate(
             overlapping_bookings=Coalesce(

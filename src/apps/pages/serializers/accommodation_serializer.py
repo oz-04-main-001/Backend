@@ -1,3 +1,4 @@
+from datetime import timedelta, date
 from typing import Dict, List, Optional, Union
 
 from rest_framework import serializers
@@ -7,6 +8,7 @@ from apps.accommodations.models import (
     Accommodation_Image,
     GPS_Info,
     RefundPolicy,
+    AccommodationType,
 )
 from apps.amenities.models import AccommodationAmenity, Amenity
 from apps.pages.serializers.room_serializer import RoomImagesSerializer, RoomSerializer
@@ -68,6 +70,12 @@ class AccommodationSerializer(serializers.ModelSerializer):
         fields = ["name", "phone_number", "description", "rules"]
 
 
+class AccommodationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccommodationType
+        fields = ["accommodation", "is_customized", "type_name"]
+
+
 # ######################################
 # 룸 -> 객실정보(방갯수)
 
@@ -80,6 +88,7 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
     rooms = serializers.SerializerMethodField()
     refund_policy = serializers.SerializerMethodField()
     accommodation_amenity = serializers.SerializerMethodField()
+    accommodation_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Accommodation
@@ -91,6 +100,7 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             "rooms",
             "accommodation_amenity",
             "refund_policy",
+            "accommodation_type",
         ]
 
     # 숙소 기본정보
@@ -171,6 +181,11 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
         refund_policy_serializer = AccommodationRefundPolicySerializer(refund_policy, many=True)
         return refund_policy_serializer.data
 
+    def get_accommodation_type(self, obj: Accommodation):
+        accommodation_type = AccommodationType.objects.filter(accommodation=obj)
+        accommodation_type_serializer = AccommodationTypeSerializer(accommodation_type, many=True)
+        return accommodation_type_serializer.data
+
 
 # 예약디테일에 들어갈 호텔 정보
 class BookingAccommodationInfoSerializer(serializers.ModelSerializer):
@@ -202,3 +217,25 @@ class BookingAccommodationInfoSerializer(serializers.ModelSerializer):
         if img:
             return img.image.url
         return None
+
+
+class AccommodationRequestSerializer(serializers.Serializer):
+    check_in_date = serializers.DateField()
+    check_out_date = serializers.DateField()
+    guests_count = serializers.IntegerField(required=True, min_value=1)
+
+    def validate(self, data):
+        # 체크아웃 날짜가 체크인 날짜보다 빠를 수 없음
+        if data["check_out_date"] <= data["check_in_date"]:
+            raise serializers.ValidationError("체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.")
+
+        # 과거 날짜 예약 금지
+        if data["check_in_date"] < date.today():
+            raise serializers.ValidationError("과거 날짜로 예약할 수 없습니다.")
+
+        # 최대 예약 기간 제한 (예: 30일)
+        max_duration = timedelta(days=30)
+        if data["check_out_date"] - data["check_in_date"] > max_duration:
+            raise serializers.ValidationError("최대 30일 이내로 예약이 가능합니다.")
+
+        return data
