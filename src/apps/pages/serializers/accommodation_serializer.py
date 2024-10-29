@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from typing import Dict, List, Optional, Union
 
 from rest_framework import serializers
@@ -5,12 +6,12 @@ from rest_framework import serializers
 from apps.accommodations.models import (
     Accommodation,
     Accommodation_Image,
+    AccommodationType,
     GPS_Info,
     RefundPolicy,
 )
 from apps.amenities.models import AccommodationAmenity, Amenity
-from apps.pages.serializers.room_serializer import RoomImagesSerializer, RoomSerializer
-from apps.rooms.models import Room, Room_Image
+from apps.pages.serializers.room_serializer import RoomResponseSerializer
 
 
 # 호텔 주소 시리얼라이저
@@ -68,6 +69,12 @@ class AccommodationSerializer(serializers.ModelSerializer):
         fields = ["name", "phone_number", "description", "rules"]
 
 
+class AccommodationTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccommodationType
+        fields = ["accommodation", "is_customized", "type_name"]
+
+
 # ######################################
 # 룸 -> 객실정보(방갯수)
 
@@ -77,9 +84,9 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
     accommodation_img = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
     min_price = serializers.SerializerMethodField()
-    rooms = serializers.SerializerMethodField()
     refund_policy = serializers.SerializerMethodField()
     accommodation_amenity = serializers.SerializerMethodField()
+    accommodation_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Accommodation
@@ -88,9 +95,9 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
             "accommodation_info",
             "address",
             "min_price",
-            "rooms",
             "accommodation_amenity",
             "refund_policy",
+            "accommodation_type",
         ]
 
     # 숙소 기본정보
@@ -122,33 +129,6 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
         min_price = obj.room_set.order_by("price").first()
         return min_price.price if min_price else None
 
-    # 룸정보 + 룸대표이미지
-    def get_rooms(self, obj: Accommodation) -> List[Dict[str, Union[str, Optional[str]]]]:
-        rooms = Room.objects.filter(accommodation=obj)
-        room_list = []
-
-        for room in rooms:
-            room_serializer = RoomSerializer(room)
-            room_dict = room_serializer.data
-
-            # 현재 room에 해당하는 이미지들을 가져옵니다.
-            room_images = Room_Image.objects.filter(room_id=room.id)
-
-            # 대표 이미지가 담길 변수
-            representative_image = None
-
-            # room에 대한 이미지를 순회하며 대표 이미지를 찾습니다.
-            for image in room_images:
-                if image.is_representative:
-                    representative_image = image.image.url
-                    break
-
-            # 직렬화된 데이터에 'images' 필드로 대표 이미지를 추가
-            room_dict["images"] = representative_image
-            room_list.append(room_dict)
-
-        return room_list
-
     def get_accommodation_amenity(self, obj: Accommodation) -> List[Dict[str, Union[str, bool]]]:
         accommodation_amenities = AccommodationAmenity.objects.filter(accommodation=obj)
         amenities_data = []
@@ -170,6 +150,11 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
         refund_policy = RefundPolicy.objects.filter(accommodation=obj)
         refund_policy_serializer = AccommodationRefundPolicySerializer(refund_policy, many=True)
         return refund_policy_serializer.data
+
+    def get_accommodation_type(self, obj: Accommodation):
+        accommodation_type = AccommodationType.objects.filter(accommodation=obj)
+        accommodation_type_serializer = AccommodationTypeSerializer(accommodation_type, many=True)
+        return accommodation_type_serializer.data
 
 
 # 예약디테일에 들어갈 호텔 정보
@@ -202,3 +187,49 @@ class BookingAccommodationInfoSerializer(serializers.ModelSerializer):
         if img:
             return img.image.url
         return None
+
+
+class AccommodationRequestSerializer(serializers.Serializer):
+    check_in_date = serializers.DateField()
+    check_out_date = serializers.DateField()
+    guests_count = serializers.IntegerField(required=True, min_value=1)
+
+    def validate(self, data):
+        # 체크아웃 날짜가 체크인 날짜보다 빠를 수 없음
+        if data["check_out_date"] <= data["check_in_date"]:
+            raise serializers.ValidationError("체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.")
+
+        # 과거 날짜 예약 금지
+        if data["check_in_date"] < date.today():
+            raise serializers.ValidationError("과거 날짜로 예약할 수 없습니다.")
+
+        # 최대 예약 기간 제한 (예: 30일)
+        max_duration = timedelta(days=30)
+        if data["check_out_date"] - data["check_in_date"] > max_duration:
+            raise serializers.ValidationError("최대 30일 이내로 예약이 가능합니다.")
+
+        return data
+
+
+class AccommodationResponseSerializer(serializers.Serializer):
+    accommodation = AccommodationDetailSerializer()
+    available_rooms = RoomResponseSerializer(many=True)
+    unavailable_rooms = RoomResponseSerializer(many=True)
+
+    # def to_representation(self, instance):
+    #
+    #     return {
+    #         "accommodation": AccommodationDetailSerializer(instance["accommodation"]).data,
+    #         "available_rooms": RoomResponseSerializer(instance["available_rooms"], many=True).data,
+    #         "unavailable_rooms": RoomResponseSerializer(instance["unavailable_rooms"], many=True).data,
+    #     }
+    def to_representation(self, instance):
+        print(type(instance))
+        print(instance)
+        if isinstance(instance, dict):
+            return {
+                "accommodation": AccommodationDetailSerializer(instance.get("accommodation")).data,
+                "available_rooms": RoomResponseSerializer(instance.get("available_rooms"), many=True).data,
+                "unavailable_rooms": RoomResponseSerializer(instance.get("unavailable_rooms"), many=True).data,
+            }
+        raise TypeError("Instance must be a dictionary.")

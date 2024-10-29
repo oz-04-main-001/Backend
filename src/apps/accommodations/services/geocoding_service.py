@@ -26,7 +26,6 @@ class GeocodingService:
             data = response.json()
             places = data.get("documents", [])
 
-            print(places)
             for place in places:
                 name = place.get("place_name")
                 address = place.get("road_address_name", place.get("address_name"))

@@ -7,10 +7,11 @@ from rest_framework.response import Response
 from apps.accommodations.serializers.accommodations_search_serializer import (
     AccommodationAvailabilityRequestSerializer,
     AccommodationAvailabilityResponseSerializer,
+    KakaoPlaceDataSerializer,
 )
 from apps.accommodations.services.accommodation_service import AccommodationService
 from apps.accommodations.services.geocoding_service import GeocodingService
-from apps.common.choices import STATE_COORDINATES
+from apps.common.choices import CITY_COORDINATES
 
 
 @extend_schema(tags=["Guest-Search"])
@@ -34,8 +35,8 @@ class AvailableAccommodationsAPIView(GenericAPIView):
                 type=OpenApiTypes.DATE,
             ),
             OpenApiParameter(
-                name="state",
-                description="State or region where the accommodation is located",
+                name="city",
+                description="City or region where the accommodation is located",
                 required=True,
                 type=OpenApiTypes.STR,
             ),
@@ -61,22 +62,28 @@ class AvailableAccommodationsAPIView(GenericAPIView):
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
 
-        state = validated_data["state"]
+        city = validated_data["city"]
         check_in_date = validated_data["check_in_date"]
         check_out_date = validated_data["check_out_date"]
         guests_count = validated_data["guests_count"]
 
         accommodations_with_available_rooms = AccommodationService.get_accommodations_with_available_rooms(
-            state=state, guests_count=guests_count, check_in_date=check_in_date, check_out_date=check_out_date
+            city=city, guests_count=guests_count, check_in_date=check_in_date, check_out_date=check_out_date
         )
 
-        latitude, longitude = STATE_COORDINATES[state]
+        latitude, longitude = CITY_COORDINATES[city]
 
-        kakao_place = GeocodingService.search_accommodations(latitude=latitude, longitude=longitude)
-        print(kakao_place)
+        kakao_place_data = GeocodingService.search_accommodations(latitude=latitude, longitude=longitude)
 
-        response_serializer = AccommodationAvailabilityResponseSerializer(
+        accommodation_serializer = AccommodationAvailabilityResponseSerializer(
             accommodations_with_available_rooms, many=True
         )
 
-        return Response(response_serializer.data, status=status.HTTP_200_OK)
+        kakao_place_data_serializer = KakaoPlaceDataSerializer(kakao_place_data, many=True)
+
+        combined_data = {
+            "accommodation_data": accommodation_serializer.data,
+            "kakao_place_data": kakao_place_data_serializer.data,
+        }
+
+        return Response(combined_data, status=status.HTTP_200_OK)

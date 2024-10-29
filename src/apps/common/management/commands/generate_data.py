@@ -114,7 +114,7 @@ class Command(BaseCommand):
         GPS_Info.objects.create(
             accommodation=accommodation,
             city="서울",
-            states="서울특별시",
+            states="강남구",
             road_name="테헤란로",
             address="서울특별시 강남구 테헤란로 123",
             location=Point(127.0395, 37.5011),  # 서울 강남구의 대략적인 좌표
@@ -244,8 +244,8 @@ class Command(BaseCommand):
 
             GPS_Info.objects.create(
                 accommodation=accommodation,
-                city=fake.city(),
-                states=fake.administrative_unit(),  # state() 대신 administrative_unit() 사용
+                city=fake.administrative_unit(),
+                states=fake.address(),  # state() 대신 administrative_unit() 사용
                 road_name=fake.street_name(),
                 address=fake.address(),
                 location=Point(

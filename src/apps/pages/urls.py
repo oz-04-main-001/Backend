@@ -14,7 +14,11 @@ app_name = "pages"  # 앱 이름 설정
 
 urlpatterns = [
     path("main/", main_view.MainListView.as_view(), name="main_list"),
-    path("accommodations/<int:pk>/", accommodation_view.AccommodationDetailView.as_view(), name="hotel_detail"),
+    path(
+        "accommodations/<int:accommodation_id>/",
+        accommodation_view.AccommodationDetailView.as_view(),
+        name="hotel_detail",
+    ),
     path("accommodations/<int:accommodation_pk>/<int:pk>/", room_view.RoomDetailView.as_view(), name="room_detail"),
     path(
         "bookings/request/<int:accommodation_pk>/<int:pk>/",
