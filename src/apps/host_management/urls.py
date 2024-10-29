@@ -5,6 +5,7 @@ from apps.host_management.views.host_booking_view import (
     BookingRequestCheckView,
     CompleteBookingsView,
     MyAccommodationListView,
+    TotalBookingCountView,
 )
 
 app_name = "host_management"
@@ -17,5 +18,10 @@ urlpatterns = [
         "accommodation/list/",
         MyAccommodationListView.as_view(),
         name="host-management-my-accommodations-list",
+    ),
+    path(
+        "totalbookingcount/",
+        TotalBookingCountView.as_view(),
+        name="host-management-total-booking-count",
     ),
 ]

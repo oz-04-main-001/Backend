@@ -12,6 +12,7 @@ from apps.common.permissions.host_permission import IsHost
 from apps.host_management.serializers.host_management_serializers import (
     AccommodationHostManagementSerializer,
     BookingCheckSerializer,
+    BookingCountSerializer,
     BookingRequestCheckSerializer,
     BookingSerializer,
     BookingStatisticsSerializer,
@@ -180,4 +181,27 @@ class MyAccommodationListView(generics.GenericAPIView):
 
         serializer = self.get_serializer(queryset, many=True)
 
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["Host-Management"])
+class TotalBookingCountView(generics.GenericAPIView):
+    """총 예약 건수"""
+
+    permission_classes = (IsAuthenticated, IsHost)
+    serializer_class = BookingCountSerializer
+
+    @extend_schema(
+        responses={status.HTTP_200_OK: BookingCountSerializer()},
+        description="호스트의 숙소에 대한 총 예약 수를 반환합니다.",
+    )
+    def get(self, request, *args, **kwargs):
+        host = request.user
+        if not host.is_authenticated:
+            return Response({"detail": "이 작업을 수행할 권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        total_bookings = Booking.objects.filter(host=host).count()
+
+        # Serialize the response
+        serializer = BookingCountSerializer({"total_bookings": total_bookings})
         return Response(serializer.data, status=status.HTTP_200_OK)
