@@ -125,6 +125,7 @@ class LoginAPIView(GenericAPIView):
 
 @extend_schema(tags=["User"])
 class CustomTokenRefreshView(GenericAPIView):
+    authentication_classes = []
     serializer_class = TokenSerializer
     permission_classes = [AllowAny]
     token_service = TokenService()
@@ -135,8 +136,8 @@ class CustomTokenRefreshView(GenericAPIView):
         description="Access Token을 재발급합니다. \n\n 만약 Refresh token도 만료 시 401 에러 -> 로그인 페이지",
     )
     def post(self, request, *args, **kwargs):
-
-        access_token_raw = request.auth
+        authorization = request.headers.get("Authorization")
+        access_token_raw = authorization.split(" ")[1] if authorization else None
 
         serializer = self.get_serializer(data=request.data, context={"access_token": access_token_raw})
         serializer.is_valid(raise_exception=True)

@@ -210,18 +210,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTH_USER_MODEL = "users.User"
 
-# websocket channels settings
-# ASGI_APPLICATION = 'yourproject.asgi.application'
-# channels redis 설정
-# CHANNEL_LAYERS = {
-#     "default": {
-#         "BACKEND": "channels_redis.core.RedisChannelLayer",
-#         "CONFIG": {
-#             "hosts": [("127.0.0.1", 6379)],
-#         },
-#     },
-# }
-
 # email settings
 
 # 이메일 백엔드 설정
@@ -238,18 +226,6 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "your_email_password")
 
 # 기본 발신자 이메일 주소
 DEFAULT_FROM_EMAIL = "webmaster@yourdomain.com"  # 발신자 기본 이메일
-
-
-# redis settings
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": "redis://redis:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         },
-#     }
-# }
 
 # 세션 설정 (선택 사항)
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
@@ -285,12 +261,16 @@ SPECTACULAR_SETTINGS = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=240),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "SIGNING_KEY": os.getenv("JWT_SECRET_KEY", "default-secret-key"),
 }
+
+# kakao_rest_api_key
+
+KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "your-kakao-rest-api-key")
 
 # if DEBUG:
 #     SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"] = timedelta(days=3650)  # 개발 환경용 긴 토큰
