@@ -6,7 +6,7 @@ from apps.common.choices import STATE_CHOICES
 
 
 class AccommodationAvailabilityRequestSerializer(serializers.Serializer):
-    state = serializers.ChoiceField(choices=STATE_CHOICES)
+    city = serializers.ChoiceField(choices=STATE_CHOICES)
     check_in_date = serializers.DateField()
     check_out_date = serializers.DateField()
     guests_count = serializers.IntegerField(required=True, min_value=1)

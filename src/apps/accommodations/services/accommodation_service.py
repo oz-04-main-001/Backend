@@ -1,13 +1,15 @@
 from apps.accommodations.models import Accommodation
+from apps.common.choices import POSSIBLE_CITY
 from apps.rooms.models import Room
 
 
 class AccommodationService:
     @staticmethod
-    def get_accommodations_with_available_rooms(state, guests_count, check_in_date, check_out_date):
+    def get_accommodations_with_available_rooms(city, guests_count, check_in_date, check_out_date):
         """예약 가능한 숙소 목록을 반환"""
+        city_variants = POSSIBLE_CITY.get(city, [city])
 
-        accommodations_in_location = Accommodation.objects.filter_by_location_and_status(state)
+        accommodations_in_location = Accommodation.objects.filter_by_location_and_status(city=city_variants)
 
         available_rooms = (
             Room.objects.filter_available_rooms(accommodations_in_location, guests_count)
