@@ -14,11 +14,11 @@ from apps.common.permissions.host_permission import IsHost
 from apps.host_management.serializers.host_management_serializers import (
     AccommodationHostManagementSerializer,
     BookingCheckSerializer,
+    BookingCountRequestSerializer,
     BookingCountResponseSerializer,
     BookingRequestCheckSerializer,
     BookingSerializer,
     BookingStatisticsSerializer,
-    BookingCountRequestSerializer,
 )
 
 

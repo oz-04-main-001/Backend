@@ -1,4 +1,4 @@
-from datetime import timedelta, date
+from datetime import date, timedelta
 from typing import Dict, List, Optional, Union
 
 from rest_framework import serializers
@@ -6,9 +6,9 @@ from rest_framework import serializers
 from apps.accommodations.models import (
     Accommodation,
     Accommodation_Image,
+    AccommodationType,
     GPS_Info,
     RefundPolicy,
-    AccommodationType,
 )
 from apps.amenities.models import AccommodationAmenity, Amenity
 from apps.pages.serializers.room_serializer import RoomResponseSerializer
