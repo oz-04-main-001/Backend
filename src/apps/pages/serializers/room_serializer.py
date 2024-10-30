@@ -131,11 +131,23 @@ class RoomDetailSerializer(RoomSerializer):
 
 class RoomResponseSerializer(serializers.ModelSerializer):
     representative_image = serializers.SerializerMethodField()
+    price = serializers.SerializerMethodField()
 
     class Meta:
         model = Room
-        fields = ["id", "name", "capacity", "max_capacity", "price", "is_available", "representative_image"]
+        fields = [
+            "id",
+            "name",
+            "capacity",
+            "max_capacity",
+            "price",
+            "is_available",
+            "representative_image",
+        ]
 
     def get_representative_image(self, obj):
         image = Room_Image.objects.filter(room=obj, is_representative=True).first()
         return image.image.url if image else None
+
+    def get_price(self, obj):
+        return f"{obj.price:,}"
