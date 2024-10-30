@@ -3,7 +3,7 @@ from django.core.validators import MinLengthValidator
 from rest_framework import serializers
 
 from apps.amenities.models import AccommodationAmenity, Amenity, Option, RoomOption
-from apps.common.choices import AMENITY_CHOICES
+from apps.common.choices import AMENITY_CHOICES, OPTION_CHOICES
 
 
 class AmenitySerializer(serializers.ModelSerializer):
@@ -65,24 +65,11 @@ class AccommodationAmenitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AccommodationAmenity
-        fields = ["id", "accommodation", "amenity", "amenity_id", "custom_value"]
-        read_only_fields = ["custom_value"]
+        fields = ["id", "accommodation", "amenity", "amenity_id"]
+        read_only_fields = ["accommodation"]
         # extra_kwargs = {
         #     'custom_value': {'required': False, 'allow_null': True}
         # }
-
-    def validate(self, data):
-        # 커스텀 어메니티의 경우 custom_value가 필수
-        if data.get("amenity_id").is_custom and not data.get("custom_value"):
-            raise serializers.ValidationError({"custom_value": "Custom value is required for custom amenities"})
-
-        # 일반 어메니티의 경우 custom_value가 있으면 안됨
-        if not data.get("amenity_id").is_custom and data.get("custom_value"):
-            raise serializers.ValidationError(
-                {"custom_value": "Custom value should not be set for non-custom amenities"}
-            )
-
-        return data
 
     def create(self, validated_data):
         amenity = validated_data.pop("amenity_id")
@@ -253,6 +240,9 @@ class OptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Option
         fields = ["id", "name", "category", "is_custom"]
+        extra_kwargs = {
+            "category": {"default": "extra"},
+        }
 
     def validate_category(self, value):
         valid_categories = ["bed", "bathroom", "view", "extra"]
@@ -260,25 +250,39 @@ class OptionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Invalid category. Must be one of: {', '.join(valid_categories)}")
         return value.lower()
 
+    def validate(self, data):
+        name = data.get("name")
+        is_custom = data.get("is_custom", False)
+
+        if not name:
+            raise serializers.ValidationError("옵션 이름은 필수입니다.")
+
+        valid_options = [choice[0] for choice in OPTION_CHOICES]
+
+        if name in valid_options:
+            # 기존 옵션인 경우
+            if is_custom:
+                raise serializers.ValidationError("이미 존재하는 옵션은 커스텀으로 설정할 수 없습니다.")
+        else:
+            # 새로운 옵션인 경우
+            if not is_custom:
+                raise serializers.ValidationError(
+                    f"'{name}'은(는) 유효한 옵션이 아닙니다. "
+                    f"다음 중 하나를 선택하세요: {', '.join(valid_options)} "
+                    f"또는 커스텀 옵션으로 설정하려면 is_custom을 true로 설정하세요."
+                )
+
+        return data
+
 
 class RoomOptionSerializer(serializers.ModelSerializer):
     option = OptionSerializer(read_only=True)
-    option_id = serializers.PrimaryKeyRelatedField(queryset=Option.objects.all(), write_only=True)
+    option_id = serializers.PrimaryKeyRelatedField(queryset=Option.objects.all(), write_only=True, source="option")
 
     class Meta:
         model = RoomOption
-        fields = ["id", "room", "option", "option_id", "custom_value"]
-
-    def validate(self, data):
-        # 커스텀 옵션의 경우 custom_value가 필수
-        if data.get("option_id").is_custom and not data.get("custom_value"):
-            raise serializers.ValidationError({"custom_value": "Custom value is required for custom options"})
-
-        # 일반 옵션의 경우 custom_value가 있으면 안됨
-        if not data.get("option_id").is_custom and data.get("custom_value"):
-            raise serializers.ValidationError({"custom_value": "Custom value should not be set for non-custom options"})
-
-        return data
+        fields = ["id", "room", "option", "option_id"]
+        read_only_fields = ["id", "room"]
 
     def create(self, validated_data):
         option = validated_data.pop("option_id")
@@ -293,7 +297,7 @@ class DetailedRoomOptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RoomOption
-        fields = ["id", "option", "custom_value"]
+        fields = ["id", "option"]
 
 
 class RoomOptionUpdateSerializer(serializers.ModelSerializer):

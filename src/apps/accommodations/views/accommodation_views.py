@@ -44,7 +44,7 @@ from apps.amenities.serializers.amenities_serializers import (
     AccommodationAmenitySerializer,
     AmenitySerializer,
 )
-from apps.common.choices import AMENITY_CHOICES
+from apps.common.choices import ACCOMMODATION_TYPE_CHOICES, AMENITY_CHOICES
 from apps.users.models import BusinessUser
 
 User = get_user_model()
@@ -103,6 +103,7 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
     )
     def post(self, request):
         try:
+            print("Request data:", request.data)
             data = {
                 "accommodation": json.loads(request.data.get("accommodation")),
                 "accommodation_type": json.loads(request.data.get("accommodation_type")),
@@ -178,6 +179,11 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
                                 amenity=amenity,
                                 custom_value=default_amenity.get("custom_value", None),
                             )
+                            amenity.is_custom = False
+                            amenity.save()
+
+                            amenity_serializer = AmenitySerializer(amenity)
+                            amenity_response_data.append(amenity_serializer.data)
                         except Amenity.DoesNotExist:
                             return Response(
                                 {"error": f"Amenity with id {amenity_id} does not exist"},
@@ -186,10 +192,10 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
             return Response(
                 {
                     "accommodation": accommodation_serializer.data,
-                    "\n" "accommodation_type": type_serializer.data,
-                    "\n" "gps_info": gps_serializer.data,
-                    "\n" "amenities": amenity_response_data,
-                    "\n" "images": image_response_data,
+                    "accommodation_type": type_serializer.data,
+                    "gps_info": gps_serializer.data,
+                    "amenities": amenity_response_data,
+                    "images": image_response_data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -217,7 +223,7 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
         """숙소 타입 처리 - 기존 타입 사용 또는 새 커스텀 타입 생성"""
         if isinstance(type_data, dict):
             # 새로운 커스텀 타입 생성
-            type_data["is_custom"] = True  # 커스텀 타입임을 표시
+            type_data["is_customized"] = True  # 커스텀 타입임을 표시
             type_serializer = AccommodationTypeSerializer(data=type_data)
             if type_serializer.is_valid():
                 return type_serializer.save()
@@ -388,6 +394,24 @@ class AmenityChoicesView(APIView):
     )
     def get(self, request):
         choices = [choice[0] for choice in AMENITY_CHOICES]  # value만 반환
+        return Response(choices)
+
+
+class AccommodationChoicesView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="숙소유형 목록 조회",
+        description="사용 가능한 숙소유형 선택지 목록을 반환합니다.",
+        responses={
+            200: {
+                "type": "array",
+                "items": {"type": "object", "properties": {"value": {"type": "string"}, "label": {"type": "string"}}},
+            }
+        },
+    )
+    def get(self, request):
+        choices = [choice[0] for choice in ACCOMMODATION_TYPE_CHOICES]  # value만 반환
         return Response(choices)
 
 
