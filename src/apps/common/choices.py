@@ -63,13 +63,17 @@ ROOM_TYPE_CHOICES = [
 
 # Accommodation type choices
 ACCOMMODATION_TYPE_CHOICES = [
-    ("hotel", "Hotel"),
-    ("resort", "Resort"),
-    ("pension", "Pension"),
-    ("guesthouse", "Guesthouse"),
-    ("hostel", "Hostel"),
-    ("motel", "Motel"),
-    ("campsite", "Campsite"),
+    ("호텔", "호텔"),
+    ("리조트", "리조트"),
+    ("펜션", "펜션"),
+    ("게스트하우스", "게스트하우스"),
+    ("호스텔", "호스텔"),
+    ("모텔", "모텔"),
+    ("캠핑장", "캠핑장"),
+    ("독채빌라", "독채 빌라"),
+    ("독채리조트", "독채 리조트"),
+    ("독채펜션", "독채 펜션"),
+    ("독채주택", "독채 주택"),
 ]
 
 AMENITY_CATEGORIES_CHOICES = [

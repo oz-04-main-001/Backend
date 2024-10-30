@@ -5,7 +5,10 @@ from apps.accommodations.views import accommodation_views as views
 from apps.accommodations.views.accommodation_search_views import (
     AvailableAccommodationsAPIView,
 )
-from apps.accommodations.views.accommodation_views import AmenityChoicesView
+from apps.accommodations.views.accommodation_views import (
+    AccommodationChoicesView,
+    AmenityChoicesView,
+)
 from apps.amenities.views import amenities_views
 
 app_name = "accommodations"
@@ -41,6 +44,7 @@ urlpatterns = [
         name="accommodation-amenities",
     ),
     path("amenity-choices/", AmenityChoicesView.as_view(), name="amenity-choices"),
+    path("accommodation-choices/", AccommodationChoicesView.as_view(), name="accommodation-choices"),
     # path("<int:accommodation_id>/refund-policy/", views.RefundPolicyView.as_view(), name="accommodation-refund-policy"),
     path("search/", AvailableAccommodationsAPIView.as_view(), name="accommodation-search"),
 ]

@@ -74,7 +74,7 @@ class AccommodationTypeSerializer(serializers.ModelSerializer):
         fields = ["type_name", "is_customized"]
         read_only_fields = ["is_customized"]
         extra_kwargs = {
-            "type_name": {"default": "hotel"},
+            "type_name": {"default": "호텔"},
             # 'is_customized': {'default': False},# is_customized 필드를 옵션으로 설정
         }
 
