@@ -81,7 +81,7 @@ class RoomSerializer(serializers.ModelSerializer):
     def get_bed_info(self, obj: Room) -> Dict[str, Any]:
         bed_options = RoomOption.objects.filter(room=obj.id, option__category="bed")
         bed_total_count = sum(option.custom_value for option in bed_options)
-        bed_type_num = dict(set((option.option.name, option.custom_value) for option in bed_options))
+        bed_type_num = [{option.option.name: option.custom_value} for option in bed_options]
 
         return {"total_beds": bed_total_count, "bed_type_num": bed_type_num}
 
