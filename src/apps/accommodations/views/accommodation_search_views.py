@@ -1,6 +1,6 @@
 from django.contrib.gis.measure import D
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema, OpenApiExample
+from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
@@ -79,10 +79,16 @@ class AvailableAccommodationsAPIView(GenericAPIView):
         """
         query_params: check_in_date, check_out_date, state, guests_count \n\n
         return: list of accommodations with available rooms \n\n
+        필수 입력값\n\n
         check_in_date: YYYY-MM-DD \n\n
         check_out_date: YYYY-MM-DD \n\n
-        state: '서울특별시' \n\n
         guests_count: int \n\n
+        \n\n
+        선택 입력값\n\n
+        검색으로 사용 시 city, 지도로 사용시 point 입력\n\n
+        city: '서울특별시' \n\n
+        point: '126.978,37.5665' \n\n
+        dist: 5000 (반경 5km default)\n\n
         """
         coordinates = request.query_params.get("point")
         serializer = self.get_serializer(data=request.query_params, context={"coordinates": coordinates})

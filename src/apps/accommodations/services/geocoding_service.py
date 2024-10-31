@@ -1,9 +1,14 @@
 import json
+
 import requests
 
 from apps.common.constants.kakao_constants import KAKAO_SEARCH_URL
 from apps.common.util.redis_client import redis_client
-from config.settings import KAKAO_REST_API_KEY, NAVER_REST_API_KEY, NAVER_REST_API_SECRET
+from config.settings import (
+    KAKAO_REST_API_KEY,
+    NAVER_REST_API_KEY,
+    NAVER_REST_API_SECRET,
+)
 
 
 class GeocodingService:
