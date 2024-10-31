@@ -163,7 +163,7 @@ class BookingRequestCheckSerializer(serializers.Serializer):
         if not booking:
             raise serializers.ValidationError("Booking not found.")
 
-        if booking.status != "pending":
+        if booking.status not in ["pending", "confirmed", "paid", "partially_paid"]:
             raise serializers.ValidationError("This booking is not in a pending state.")
 
         if booking.room.accommodation.host != user.business_profile:
