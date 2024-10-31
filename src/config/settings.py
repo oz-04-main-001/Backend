@@ -290,18 +290,19 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 
 # Aws S3 settings
 
-# # django-storages를 사용한 S3 설정
-# INSTALLED_APPS += ['storages']
-#
-# # AWS S3 관련 설정
-# AWS_ACCESS_KEY_ID = 'your-access-key-id'
-# AWS_SECRET_ACCESS_KEY = 'your-secret-access-key'
-# AWS_STORAGE_BUCKET_NAME = 'your-s3-bucket-name'
-# AWS_S3_REGION_NAME = 'your-region'  # 예: 'us-west-1'
-#
-# # 정적 파일 및 미디어 파일 설정
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-#
+# django-storages를 사용한 S3 설정
+INSTALLED_APPS += ["storages"]
+
+# AWS S3 관련 설정
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
+
+
+# 정적 파일 및 미디어 파일 설정
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
 # # 캐시 설정 (선택 사항)
 # AWS_QUERYSTRING_AUTH = False  # S3 링크에 인증 매개변수를 포함하지 않음
