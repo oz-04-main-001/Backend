@@ -274,6 +274,11 @@ SIMPLE_JWT = {
 
 KAKAO_REST_API_KEY = os.getenv("KAKAO_REST_API_KEY", "your-kakao-rest-api-key")
 
+# naver_rest_api_key
+
+NAVER_REST_API_KEY = os.getenv("NAVER_CLIENT_ID", "your-naver-rest-api-key")
+NAVER_REST_API_SECRET = os.getenv("NAVER_SECRET_ID", "your-naver-rest-api-secret")
+
 # if DEBUG:
 #     SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"] = timedelta(days=3650)  # 개발 환경용 긴 토큰
 # else:

@@ -1,3 +1,5 @@
+from django.contrib.gis.measure import D
+
 from apps.accommodations.models import Accommodation
 from apps.common.choices import POSSIBLE_CITY
 from apps.rooms.models import Room
@@ -5,18 +7,27 @@ from apps.rooms.models import Room
 
 class AccommodationService:
     @staticmethod
-    def get_accommodations_with_available_rooms(city, guests_count, check_in_date, check_out_date):
-        """예약 가능한 숙소 목록을 반환"""
-        city_variants = POSSIBLE_CITY.get(city, [city])
+    def get_accommodations_with_available_rooms(
+        city=None, location=None, radius=5000, guests_count=1, check_in_date=None, check_out_date=None
+    ):
+        """도시 또는 위치 기반으로 예약 가능한 숙소 목록을 반환"""
+        accommodations_in_location = Accommodation.objects.none()
 
-        accommodations_in_location = Accommodation.objects.filter_by_location_and_status(city=city_variants)
+        # 도시 기반 필터링
+        if city:
+            city_variants = POSSIBLE_CITY.get(city, [city])
+            accommodations_in_location = Accommodation.objects.filter_by_location_and_status(city=city_variants)
+        # 위치 기반 필터링
+        elif location:
+            accommodations_in_location = Accommodation.objects.filter(
+                gps_info__location__distance_lte=(location, D(m=radius))
+            )
 
         available_rooms = (
             Room.objects.filter_available_rooms(accommodations_in_location, guests_count)
             .annotate_overlapping_bookings(check_in_date, check_out_date)
             .filter_rooms_with_sufficient_inventory()
         )
-
         return Accommodation.objects.filter_by_available_rooms(available_rooms)
 
     @staticmethod

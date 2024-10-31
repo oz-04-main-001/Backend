@@ -143,6 +143,8 @@ class RoomResponseSerializer(serializers.ModelSerializer):
             "price",
             "is_available",
             "representative_image",
+            "check_in_time",
+            "check_out_time",
         ]
 
     def get_representative_image(self, obj):
