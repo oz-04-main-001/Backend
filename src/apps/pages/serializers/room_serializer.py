@@ -1,9 +1,6 @@
 from typing import Any, Dict, List
 
-from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.permissions import AllowAny
 
 from apps.accommodations.models import Accommodation
 from apps.amenities.models import Option, RoomOption
@@ -87,11 +84,6 @@ class RoomSerializer(serializers.ModelSerializer):
         bed_type_num = dict(set((option.option.name, option.custom_value) for option in bed_options))
 
         return {"total_beds": bed_total_count, "bed_type_num": bed_type_num}
-
-    # def get_room_inventory(self, obj: Room) -> int:
-    #     room_inventory = RoomInventory.objects.filter(room=obj.id)
-    #     serializer = RoomInventorySerializer(room_inventory, many=True)
-    #     return serializer.data
 
     def get_room_count(self, obj: Room) -> int:
         room_inventory = RoomInventory.objects.filter(room=obj.id).first()

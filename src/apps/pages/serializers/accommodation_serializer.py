@@ -216,13 +216,6 @@ class AccommodationResponseSerializer(serializers.Serializer):
     available_rooms = RoomResponseSerializer(many=True)
     unavailable_rooms = RoomResponseSerializer(many=True)
 
-    # def to_representation(self, instance):
-    #
-    #     return {
-    #         "accommodation": AccommodationDetailSerializer(instance["accommodation"]).data,
-    #         "available_rooms": RoomResponseSerializer(instance["available_rooms"], many=True).data,
-    #         "unavailable_rooms": RoomResponseSerializer(instance["unavailable_rooms"], many=True).data,
-    #     }
     def to_representation(self, instance):
         print(type(instance))
         print(instance)
