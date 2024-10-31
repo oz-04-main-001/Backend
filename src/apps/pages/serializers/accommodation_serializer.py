@@ -127,7 +127,7 @@ class AccommodationDetailSerializer(serializers.ModelSerializer):
     # 최저가
     def get_min_price(self, obj: Accommodation) -> Optional[int]:
         min_price = obj.room_set.order_by("price").first()
-        return min_price.price if min_price else None
+        return f"{min_price.price:,}" if min_price else None
 
     def get_accommodation_amenity(self, obj: Accommodation) -> List[Dict[str, Union[str, bool]]]:
         accommodation_amenities = AccommodationAmenity.objects.filter(accommodation=obj)
@@ -217,8 +217,6 @@ class AccommodationResponseSerializer(serializers.Serializer):
     unavailable_rooms = RoomResponseSerializer(many=True)
 
     def to_representation(self, instance):
-        print(type(instance))
-        print(instance)
         if isinstance(instance, dict):
             return {
                 "accommodation": AccommodationDetailSerializer(instance.get("accommodation")).data,

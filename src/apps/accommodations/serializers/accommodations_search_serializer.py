@@ -1,20 +1,37 @@
+from django.contrib.gis.geos import Point
 from django.db.models import Min
 from rest_framework import serializers
+from rest_framework_gis.fields import GeometryField
 
 from apps.accommodations.models import Accommodation
 from apps.common.choices import STATE_CHOICES
 
 
 class AccommodationAvailabilityRequestSerializer(serializers.Serializer):
-    city = serializers.ChoiceField(choices=STATE_CHOICES)
+    city = serializers.ChoiceField(choices=STATE_CHOICES, required=False)
     check_in_date = serializers.DateField()
     check_out_date = serializers.DateField()
     guests_count = serializers.IntegerField(required=True, min_value=1)
+    location = GeometryField(required=False, help_text="GeoJSON Point object")
+    dist = serializers.IntegerField(required=False, help_text="Search radius in meters (e.g., 5000 for 5 km)")
 
-    def validate(self, data):
-        # 체크아웃 날짜가 체크인 날짜보다 빠른 경우 에러 처리
+    def validate(self, data: dict) -> dict:
+        coordinates = self.context.get("coordinates", "")
+
         if data["check_out_date"] <= data["check_in_date"]:
             raise serializers.ValidationError("체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.")
+        if coordinates in self.context and "city" not in data:
+            raise serializers.ValidationError("city 또는 location 중 하나는 입력해야 합니다.")
+        if coordinates:
+            try:
+                longitude, latitude = map(float, coordinates.strip("[]").split(","))
+                data["location"] = Point(longitude, latitude, srid=4326)
+            except ValueError:
+                raise serializers.ValidationError("Invalid coordinates format. Expected '[longitude,latitude]'.")
+
+        if "location" not in data and "city" not in data:
+            raise serializers.ValidationError("city 또는 location 중 하나는 입력해야 합니다.")
+
         return data
 
 
@@ -58,6 +75,7 @@ class KakaoPlaceDataSerializer(serializers.Serializer):
     road_address_name = serializers.CharField()
     location = serializers.SerializerMethodField()
     place_url = serializers.CharField()
+    image_url = serializers.CharField()
 
     def get_location(self, obj):
         return (obj["y"], obj["x"])
