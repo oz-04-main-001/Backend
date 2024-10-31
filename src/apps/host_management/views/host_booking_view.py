@@ -96,7 +96,7 @@ class BookingRequestCheckView(generics.GenericAPIView):
 
         if action == "accept":
             booking.status = "confirmed"
-        elif action == "cancel":
+        elif action == "cancelled":
             booking.status = "cancelled_by_host"
         else:
             return Response(
