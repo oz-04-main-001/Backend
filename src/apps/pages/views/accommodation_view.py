@@ -5,11 +5,8 @@ from rest_framework.generics import GenericAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
-
-from apps.accommodations.models import Accommodation
 from apps.accommodations.services.accommodation_service import AccommodationService
 from apps.pages.serializers.accommodation_serializer import (
-    AccommodationDetailSerializer,
     AccommodationRequestSerializer,
     AccommodationResponseSerializer,
 )

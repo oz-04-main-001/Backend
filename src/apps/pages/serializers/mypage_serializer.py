@@ -4,8 +4,6 @@ from rest_framework import serializers
 
 from apps.accommodations.models import Accommodation_Image
 from apps.bookings.models import Booking
-from apps.pages.serializers.accommodation_serializer import AccommodationImgSerializer
-from apps.rooms.models import Room
 from apps.users.serializers.ui_mypage_user_serializer import MyPageUserSerializer
 
 
