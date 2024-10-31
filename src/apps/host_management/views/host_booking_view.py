@@ -73,7 +73,7 @@ class BookingCheckView(generics.GenericAPIView):
 
 @extend_schema(tags=["Host-Management"])
 class BookingRequestCheckView(generics.GenericAPIView):
-    """예약 요청 관리"""
+    """게스트가 보낸 예약 요청을 수락/거절하는 기능을 처리"""
 
     serializer_class = BookingRequestCheckSerializer
     permission_classes = (IsAuthenticated, IsHost)
@@ -84,25 +84,29 @@ class BookingRequestCheckView(generics.GenericAPIView):
     )
     def patch(self, request):
         """
-        게스트가 보낸 예약 요청을 수락/거절하는 기능
-        클라이언트로가 patch요청을 보내면 요청 데이터로 부터 전송된 action이라는 키를 가져와야 함
-        action의 값에 따라 booking.status의 값으로 반환함
+        게스트가 보낸 예약 요청을 수락 또는 거절합니다.
+        요청 데이터에서 'action' 키를 추출해 그 값에 따라 예약 상태를 업데이트하고 반환합니다.
         """
         user = request.user
         serializer = self.get_serializer(data=request.data, context={"user": user})
         serializer.is_valid(raise_exception=True)
 
         booking = serializer.context["booking"]
-        action = serializer.validated_data["action"]
+        action = serializer.validated_data.get("action")
 
         if action == "accept":
             booking.status = "confirmed"
-        if action == "cancelled":
+        elif action == "cancel":
             booking.status = "cancelled_by_host"
+        else:
+            return Response(
+                {"message": "유효하지 않은 action 값입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         booking.save()
         return Response(
-            {"message": "예약 요청이 성공했습니다", "status": booking.status},
+            {"message": "예약 요청이 성공적으로 처리되었습니다", "status": booking.status},
             status=status.HTTP_200_OK,
         )
 
