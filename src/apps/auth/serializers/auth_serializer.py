@@ -75,6 +75,15 @@ class LoginSerializer(serializers.Serializer):
         return data
 
 
+class LoginResponseSerializer(serializers.Serializer):
+    access_token = serializers.CharField()
+    user_type = serializers.CharField()
+
+
+class AccessTokenResponseSerializer(serializers.Serializer):
+    access_token = serializers.CharField()
+
+
 class UserOTPRequestSerializer(serializers.Serializer):
     def validate(self, data: dict) -> dict:
         email = self.context.get("email")
@@ -117,6 +126,10 @@ class UserEmailLookupSerializer(serializers.Serializer):
         return data
 
 
+class UserEmailLookupResponseSerializer(serializers.Serializer):
+    email = serializers.CharField()
+
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -156,3 +169,7 @@ class PasswordResetSerializer(serializers.Serializer):
         data["user"] = user
 
         return data
+
+
+class AuthResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
