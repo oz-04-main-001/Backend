@@ -1,5 +1,7 @@
 from typing import Any, Dict, List
+
 from rest_framework import serializers
+
 from apps.accommodations.models import Accommodation
 from apps.amenities.models import Option, RoomOption
 from apps.pages.services.money_view_service import MoneyViewService

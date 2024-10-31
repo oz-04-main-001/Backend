@@ -16,7 +16,7 @@ class ReviewsView(ListCreateAPIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     @extend_schema(
-        tags=['Guest-Reviews'],
+        tags=["Guest-Reviews"],
         summary="리뷰 리스트",
         description="리뷰 목록을 조회합니다.",
         responses={200: ReviewListCreateSerializer(many=True)},
@@ -25,7 +25,7 @@ class ReviewsView(ListCreateAPIView):
         return self.list(request, *args, **kwargs)
 
     @extend_schema(
-        tags=['Guest-Reviews'],
+        tags=["Guest-Reviews"],
         summary="리뷰 생성",
         description="새로운 리뷰를 작성합니다.",
         responses={201: ReviewListCreateSerializer()},
@@ -45,7 +45,7 @@ class ReviewDetailView(RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticatedOrReadOnly,)
 
     @extend_schema(
-        tags=['Guest-Reviews'],
+        tags=["Guest-Reviews"],
         summary="리뷰 디테일 조회",
         description="특정 리뷰의 상세 정보를 조회합니다.",
         responses={200: ReviewDetailUpdateDeleteSerializer()},
@@ -54,7 +54,7 @@ class ReviewDetailView(RetrieveUpdateDestroyAPIView):
         return self.retrieve(request, *args, **kwargs)
 
     @extend_schema(
-        tags=['Guest-Reviews'],
+        tags=["Guest-Reviews"],
         summary="리뷰 수정",
         description="리뷰를 수정합니다.",
         responses={204: ReviewDetailUpdateDeleteSerializer()},
@@ -63,7 +63,7 @@ class ReviewDetailView(RetrieveUpdateDestroyAPIView):
         return self.update(request, *args, **kwargs)
 
     @extend_schema(
-        tags=['Guest-Reviews'],
+        tags=["Guest-Reviews"],
         summary="리뷰 수정",
         description="리뷰를 수정합니다.",
         responses={204: ReviewDetailUpdateDeleteSerializer()},
@@ -72,7 +72,7 @@ class ReviewDetailView(RetrieveUpdateDestroyAPIView):
         return self.partial_update(request, *args, **kwargs)
 
     @extend_schema(
-        tags=['Guest-Reviews'],
+        tags=["Guest-Reviews"],
         summary="리뷰 삭제",
         description="리뷰를 삭제합니다.",
         responses={204: ReviewDetailUpdateDeleteSerializer()},
