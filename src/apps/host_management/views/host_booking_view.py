@@ -1,12 +1,13 @@
-from datetime import date, datetime
+from collections import defaultdict
+from datetime import date, timedelta
 
-from django.db.models import Count
-from django.db.models.functions import TruncDate
+from django.db.models import Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.accommodations.models import Accommodation
 from apps.bookings.models import Booking
@@ -18,7 +19,7 @@ from apps.host_management.serializers.host_management_serializers import (
     BookingCountResponseSerializer,
     BookingRequestCheckSerializer,
     BookingSerializer,
-    BookingStatisticsSerializer,
+    BookingStatisticsSerializer, ChangedBookingCountSerializer,
 )
 
 
@@ -106,8 +107,14 @@ class BookingRequestCheckView(generics.GenericAPIView):
 
         booking.save()
         return Response(
-            {"message": "예약 요청이 성공적으로 처리되었습니다", "status": booking.status},
-            status=status.HTTP_200_OK,
+            {
+                "message": "예약 요청이 성공적으로 처리되었습니다",
+                "booking": {
+                    "status": booking.status,
+                    "check_in_date": booking.check_in_date,
+                    "check_out_date": booking.check_out_date,
+                },
+            }, status=status.HTTP_200_OK,
         )
 
 
@@ -224,5 +231,22 @@ class TotalBookingCountView(generics.GenericAPIView):
             status_list=validated_data["status_list"],
         )
 
-        serializer = BookingCountResponseSerializer(daily_bookings, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        date_booking_counts = defaultdict(int)
+
+        for booking in daily_bookings:
+            current_date = booking.check_in_datetime.date()
+            check_out_date = booking.check_out_datetime.date()
+
+            while current_date < check_out_date:
+                date_booking_counts[current_date] += 1
+                current_date += timedelta(days=1)
+
+        sorted_counts = [
+            {"date": booking_date, "total_bookings": count}
+            for booking_date, count in sorted(date_booking_counts.items())
+        ]
+
+        response_serializer = BookingCountResponseSerializer(sorted_counts, many=True)
+
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
