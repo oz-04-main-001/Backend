@@ -29,4 +29,8 @@ class IsHost(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         # 객체 수준의 권한이 필요한 경우 여기에 로직을 추가합니다.
         # 특정 숙소의 소유자인지 확인
-        return obj.host == request.user.business_profile
+        if hasattr(obj, "accommodation"):
+            return obj.accommodation.host == request.user.business_profile
+        elif hasattr(obj, "host"):
+            return obj.host == request.user.business_profile
+        return False
