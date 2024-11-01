@@ -217,7 +217,6 @@ class AccommodationHostManagementSerializer(serializers.ModelSerializer):
         return obj.accommodationtype.type_name
 
 
-
 class BookingCountRequestSerializer(serializers.Serializer):
     month = serializers.IntegerField(required=True)
     year = serializers.IntegerField(default=datetime.now().year)
