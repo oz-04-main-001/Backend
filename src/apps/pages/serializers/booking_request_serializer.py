@@ -55,6 +55,3 @@ class BookingRequestSerializer(serializers.ModelSerializer):
         room = Room.objects.get(id=obj.id)
         serializer = RoomSerializer(room)
         return serializer.data
-
-
-

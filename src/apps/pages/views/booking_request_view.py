@@ -1,9 +1,11 @@
+from django.utils.dateparse import parse_date
 from rest_framework import serializers, status
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
-from django.utils.dateparse import parse_date
+
 from apps.pages.serializers.booking_request_serializer import BookingRequestSerializer
 from apps.rooms.models import Room
+
 
 class BookingRequestView(RetrieveAPIView):
     serializer_class = BookingRequestSerializer
