@@ -17,7 +17,7 @@ urlpatterns = [
     path(
         "accommodations/<int:accommodation_id>/",
         accommodation_view.AccommodationDetailView.as_view(),
-        name="hotel_detail",
+        name="accommodation_detail",
     ),
     path("accommodations/<int:accommodation_pk>/<int:pk>/", room_view.RoomDetailView.as_view(), name="room_detail"),
     path(

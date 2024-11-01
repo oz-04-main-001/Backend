@@ -16,9 +16,11 @@ class MainPageSerializer(serializers.ModelSerializer):
 
     def get_min_price(self, obj: Accommodation) -> Optional[int]:
         min_price_room = obj.room_set.order_by("price").first()
-        money_mark = MoneyViewService()
-        money_min_price = money_mark.format(min_price_room.price)
-        return money_min_price
+        if min_price_room is not None:
+            money_mark = MoneyViewService()
+            money_min_price = money_mark.format(min_price_room.price)
+            return money_min_price
+        return None  # 방이 없는 경우 None 반환
 
     # 숙소 대표 이미지
     def get_accommodation_img(self, obj: Accommodation) -> Optional[Union[str, None]]:
