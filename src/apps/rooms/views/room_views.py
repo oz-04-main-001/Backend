@@ -25,9 +25,11 @@ from apps.amenities.serializers.amenities_serializers import (
     RoomOptionSerializer,
 )
 from apps.bookings.models import Booking
+from apps.common.choices import OPTION_CHOICES
 from apps.rooms.models import Room, Room_Image, RoomInventory, RoomType
 from apps.rooms.serializers import room_serializer as serializers
 from apps.rooms.serializers.room_serializer import (
+    BedOptionSerializer,
     RoomImageSerializer,
     RoomInventorySerializer,
     RoomSerializer,
@@ -56,13 +58,16 @@ class RoomListCreateView(BaseRoomView, APIView):
             name="RoomCreateRequest",
             fields={
                 "room": serializers.RoomSerializer(),
-                "images": ListField(child=ImageField(), help_text="방에 업로드할 이미지 파일들"),
-                "room_type": serializers.RoomTypeSerializer(),
-                "inventory": serializers.RoomInventorySerializer(),
+                "images": ListField(
+                    child=ImageField(), help_text="독채가 아닐 경우 방에 업로드할 이미지 파일들", required=False
+                ),
+                "room_type": serializers.RoomTypeSerializer(help_text="독채가 아닐 경우 방의 유형", required=False),
+                "inventory": serializers.RoomInventorySerializer(help_text="독채일 경우 count_room은 1밖에 안됨"),
                 "options": inline_serializer(
                     name="OptionsRequest",
                     fields={"new": OptionSerializer(many=True), "default": RoomOptionSerializer(many=True)},
                 ),
+                "bed_options": serializers.BedOptionSerializer(many=True),
             },
         ),
         responses={
@@ -80,12 +85,16 @@ class RoomListCreateView(BaseRoomView, APIView):
         try:
             data = {
                 "room": json.loads(request.data.get("room")),
-                "room_type": json.loads(request.data.get("room_type")),
+                "room_type": json.loads(request.data.get("room_type", "{}")),
                 "inventory": json.loads(request.data.get("inventory")),
                 "options": json.loads(request.data.get("options")),
+                "bed_options": (
+                    [json.loads(request.data.get("bed_options"))]
+                    if isinstance(json.loads(request.data.get("bed_options", "{}")), dict)
+                    else json.loads(request.data.get("bed_options", "[]"))
+                ),
                 "images": request.FILES.getlist("images"),
             }
-
             request_data = self.validate_room_data(data)
 
             # 1. create room model
@@ -109,6 +118,7 @@ class RoomListCreateView(BaseRoomView, APIView):
             # 3. create room type
             type_serializer = serializers.RoomTypeSerializer(
                 data=request_data.get("room_type"),
+                context={"request": request},
             )
             if not type_serializer.is_valid():
                 return Response(type_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -121,6 +131,23 @@ class RoomListCreateView(BaseRoomView, APIView):
             )
             if not inventory_serializer.is_valid():
                 return Response(inventory_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            inventory_serializer.save(room=room)
+
+            # 5. 침대옵션 처리
+            bed_options_data = request_data["bed_options"]
+            bed_option_response_data = []
+
+            for bed_option in bed_options_data:
+                bed_serializer = BedOptionSerializer(data=bed_option)
+                if not bed_serializer.is_valid():
+                    return Response(bed_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+                option = Option.objects.create(name=bed_option["bed_type"], category="bed", is_custom=False)
+
+                RoomOption.objects.create(room=room, option=option, custom_value=None)  # 그냥 None으로 설정
+
+                response_serializer = BedOptionSerializer(option, context={"quantity": bed_option["quantity"]})
+                bed_option_response_data.append(response_serializer.data)
 
             # 5. 옵션처리
             options_data = request_data["options"]  # get 대신
@@ -166,6 +193,7 @@ class RoomListCreateView(BaseRoomView, APIView):
                     "room_type": type_serializer.data,
                     "inventory": inventory_serializer.data,
                     "options": option_response_data,
+                    "bed_options": bed_option_response_data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -175,16 +203,44 @@ class RoomListCreateView(BaseRoomView, APIView):
             return Response({"error": e.detail}, status=status.HTTP_400_BAD_REQUEST)
 
     def validate_room_data(self, request_data):
-        if not request_data.get("room"):
+        # 1. 숙소 타입 확인 (accommodation 데이터 가져오기)
+        room_data = request_data.get("room")
+        if not room_data:
             raise ValidationError({"room": "방 정보가 누락되었습니다."})
-        if not request_data.get("images"):
-            raise ValidationError({"images": "방 이미지가 누락되었습니다."})
-        if not request_data.get("room_type"):
-            raise ValidationError({"room_type": "방 유형 정보가 누락되었습니다."})
+
+        # accommodation_id로 숙소 정보 조회
+        accommodation = get_object_or_404(Accommodation, id=room_data.get("accommodation"))
+        is_whole_house = "독채" in accommodation.accommodationtype.type_name
+
+        # 2. 일반 숙소인 경우 모든 필수 데이터 검증
+        if not is_whole_house:
+            if not request_data.get("images"):
+                raise ValidationError({"images": "방 이미지가 누락되었습니다."})
+            if not request_data.get("room_type", {}).get("type_name"):
+                raise ValidationError({"room_type": "방 유형 정보가 누락되었습니다."})
+            if not room_data.get("name"):
+                raise ValidationError({"name": "방 이름이 누락되었습니다."})
+            if not room_data.get("description"):
+                raise ValidationError({"description": "방 설명이 누락되었습니다."})
+
         if not request_data.get("inventory"):
             raise ValidationError({"inventory": "인벤토리 정보가 누락되었습니다."})
         if not request_data.get("options"):
             raise ValidationError({"options": "옵션 정보가 누락되었습니다."})
+
+        # 3. 독채인 경우 기본값 설정
+        if is_whole_house:
+            if request_data.get("room_type"):
+                del request_data["room_type"]
+                raise ValidationError({"room_type": "독채는 객실의 유형이 필요없습니다."})
+            if request_data.get("images"):
+                del request_data["images"]
+                raise ValidationError({"images": "독채는 숙소에서 이미지를 등록해주세요."})
+            room_data["name"] = accommodation.name
+            room_data["description"] = accommodation.description
+            inventory_data = request_data.get("inventory", {})
+            if inventory_data.get("count_room") != 1:
+                raise ValidationError({"count_room": "독채는 한 개의 숙소만 등록 가능합니다."})
 
         return request_data
 
@@ -211,9 +267,10 @@ class RoomRetrieveUpdateDestroyView(BaseRoomView, generics.RetrieveUpdateDestroy
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop("partial", False)
+        kwargs["partial"] = True  # PATCH 메서드를 위해 partial=True로 설정
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
@@ -239,8 +296,9 @@ class RoomTypeView(BaseRoomView, generics.RetrieveUpdateAPIView):
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):
+        kwargs["partial"] = True  # partial update 허용
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
@@ -306,8 +364,28 @@ class RoomInventoryView(BaseRoomView, generics.RetrieveUpdateAPIView):
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):
+        kwargs["partial"] = True  # PATCH 메서드를 위해 partial=True로 설정
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data)
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+
+class OptionChoicesView(APIView):
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="옵션 선택지 목록 조회",
+        description="사용 가능한 옵션 선택지 목록을 반환합니다.",
+        responses={
+            200: {
+                "type": "array",
+                "items": {"type": "object", "properties": {"value": {"type": "string"}, "label": {"type": "string"}}},
+            }
+        },
+    )
+    def get(self, request):
+        choices = [choice[0] for choice in OPTION_CHOICES]  # value만 반환
+        return Response(choices)

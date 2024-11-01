@@ -7,25 +7,52 @@ from apps.common.choices import AMENITY_CHOICES, OPTION_CHOICES
 
 
 class AmenitySerializer(serializers.ModelSerializer):
-    name = serializers.ChoiceField(
-        choices=AMENITY_CHOICES, validators=[MinLengthValidator(2, "Name must be at least 2 characters long")]
-    )
-    display_name = serializers.SerializerMethodField()
+    name = serializers.CharField(validators=[MinLengthValidator(2, "Name must be at least 2 characters long")])
+
+    # class OptionSerializer(serializers.ModelSerializer):
+    #     name = serializers.CharField(validators=[MinLengthValidator(2, "Name must be at least 2 characters long")])
+    #
+    #     class Meta:
+    #         model = Option
+    #         fields = ["id", "name", "category", "is_custom"]
+    #         extra_kwargs = {
+    #             "category": {"default": "extra"},
+    #         }
+    #
+    #     def validate_category(self, value):
+    #         valid_categories = ["bed", "bathroom", "view", "extra"]
+    #         if value.lower() not in valid_categories:
+    #             raise serializers.ValidationError(f"Invalid category. Must be one of: {', '.join(valid_categories)}")
+    #         return value.lower()
 
     class Meta:
         model = Amenity
-        fields = ["id", "name", "display_name", "category", "is_custom"]
+        fields = ["id", "name", "category", "is_custom"]
         read_only_fields = ["id", "category"]  # category를 읽기 전용으로 설정
 
-    def get_display_name(self, obj):
-        """Return the human-readable name for the selected amenity"""
-        return dict(AMENITY_CHOICES).get(obj.name, obj.name)
+    def validate(self, data):
+        name = data.get("name")
+        is_custom = data.get("is_custom", False)
 
-    def validate_category(self, value):
-        valid_categories = ["basic", "safety", "facility", "service"]
-        if value.lower() not in valid_categories:
-            raise serializers.ValidationError(f"Invalid category. Must be one of: {', '.join(valid_categories)}")
-        return value.lower()
+        if not name:
+            raise serializers.ValidationError("부대시설 이름은 필수입니다.")
+
+        valid_options = [choice[0] for choice in AMENITY_CHOICES]
+
+        if name in valid_options:
+            # 기존 옵션인 경우
+            if is_custom:
+                raise serializers.ValidationError("이미 존재하는 부대시설은 커스텀으로 설정할 수 없습니다.")
+        else:
+            # 새로운 옵션인 경우
+            if not is_custom:
+                raise serializers.ValidationError(
+                    f"'{name}'은(는) 유효한 부대시설이 아닙니다. "
+                    f"다음 중 하나를 선택하세요: {', '.join(valid_options)} "
+                    f"또는 커스텀 부대시설로 설정하려면 is_custom을 true로 설정하세요."
+                )
+
+        return data
 
     #
     # def validate_icon(self, value):

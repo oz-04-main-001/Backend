@@ -103,7 +103,6 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
     )
     def post(self, request):
         try:
-            print("Request data:", request.data)
             data = {
                 "accommodation": json.loads(request.data.get("accommodation")),
                 "accommodation_type": json.loads(request.data.get("accommodation_type")),
@@ -138,6 +137,7 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
             # 3. create accommodation type
             type_serializer = serializers.AccommodationTypeSerializer(
                 data=request_data.get("accommodation_type"),
+                context={"request": request},
             )
             if not type_serializer.is_valid():
                 return Response(type_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -247,8 +247,6 @@ class AccommodationRetrieveUpdateDestroyView(BaseAccommodationView, generics.Ret
         if not partial:
             if not request_data.get("name"):
                 raise ValidationError({"name": "숙소 이름은 필수입니다."})
-            if not request_data.get("phone_number"):
-                raise ValidationError({"phone_number": "전화번호는 필수입니다."})
 
     @transaction.atomic
     def update(self, request, *args, **kwargs):

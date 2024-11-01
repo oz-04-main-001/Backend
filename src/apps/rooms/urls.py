@@ -3,6 +3,7 @@ from django.urls import path
 
 from apps.amenities.views import amenities_views
 from apps.rooms.views import room_views as views
+from apps.rooms.views.room_views import OptionChoicesView
 
 app_name = "rooms"
 
@@ -15,4 +16,5 @@ urlpatterns = [
     path("<int:room_id>/images/", views.RoomImageView.as_view(), name="room-images"),
     path("<int:room_id>/inventory/", views.RoomInventoryView.as_view(), name="room-inventory"),
     path("<int:room_id>/options/", amenities_views.RoomOptionView.as_view(), name="room-option"),
+    path("option-choices/", OptionChoicesView.as_view(), name="option-choices"),
 ]

@@ -110,35 +110,32 @@ OPTION_CATEGORIES_CHOICES = [
 
 # Option 선택 항목
 OPTION_CHOICES = [
-    # Service 관련 옵션
-    ("daily_housekeeping", "Daily housekeeping"),
-    ("room_service", "Room service"),
-    ("laundry_service", "Laundry service"),
-    ("airport_shuttle", "Airport shuttle"),
-    ("breakfast_in_room", "Breakfast in room"),
-    ("wake_up_call", "Wake-up call"),
-    ("concierge_service", "Concierge service"),
-    # Extras 관련 옵션
-    ("extra_bed", "Extra bed"),
-    ("late_check_out", "Late check-out"),
-    ("early_check_in", "Early check-in"),
-    ("parking_spot", "Parking spot"),
-    ("baby_crib", "Baby crib"),
-    ("mini_bar", "Mini bar"),
-    ("soundproof_windows", "Soundproof windows"),
-    ("balcony", "Balcony"),
-    ("coffee_machine", "Coffee machine"),
-    # Room Features 관련 옵션
-    ("blackout_curtains", "Blackout curtains"),
-    ("soundproof_windows", "Soundproof windows"),
-    ("private_balcony", "Private balcony"),
-    ("in_room_safe", "In-room safe"),
-    ("smart_tv", "Smart TV"),
-    ("bluetooth_speakers", "Bluetooth speakers"),
-    ("air_purifier", "Air purifier"),
-    ("heater", "Heater"),
+    # 서비스 관련 옵션
+    ("하우스키핑", "일일 하우스키핑"),
+    ("룸서비스", "룸서비스"),
+    ("세탁서비스", "세탁 서비스"),
+    ("객실조식", "객실 조식"),
+    ("모닝콜", "모닝콜"),
+    # 추가 서비스 관련 옵션
+    ("침대추가", "침대 추가"),
+    ("레이트체크아웃", "레이트 체크아웃"),
+    ("얼리체크인", "얼리 체크인"),
+    ("아기침대", "아기 침대"),
+    ("미니바", "미니바"),
+    ("방음창문", "방음 창문"),
+    ("발코니", "발코니"),
+    ("커피머신", "커피머신"),
+    # 객실 특징 관련 옵션
+    ("암막커튼", "암막 커튼"),
+    ("전용발코니", "전용 발코니"),
+    ("객실금고", "객실 금고"),
+    ("스마트tv", "스마트 TV"),
+    ("블루투스스피커", "블루투스 스피커"),
+    ("공기청정기", "공기청정기"),
+    ("난방기", "난방기"),
+    ("냉장고", "냉장고"),
+    ("에어컨", "에어컨"),
 ]
-
 # Amenity 카테고리와 선택 항목 묶음
 AMENITY_CHOICES_BY_CATEGORY = {
     "basic": [
@@ -222,6 +219,15 @@ OPTION_CHOICES_BY_CATEGORY = {
         ("heater", "Heater"),
     ],
 }
+
+BED_TYPE_CHOICES = [
+    ("single", "싱글"),
+    ("super_single", "슈퍼싱글"),
+    ("double", "더블"),
+    ("queen", "퀸"),
+    ("king", "킹"),
+    ("none", "없음"),
+]
 
 STATE_CHOICES = [
     ("서울특별시", "서울특별시"),

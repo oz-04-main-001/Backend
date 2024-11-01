@@ -79,7 +79,7 @@ class AccommodationTypeSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        type_name = data.get("type_name", "").lower()  # 소문자로 변환
+        type_name = data.get("type_name", "")  # 소문자로 변환
         data["type_name"] = type_name  # 변환된 값을 다시 저장
         is_customized = data.get("is_customized", False)
         valid_types = [choice[0] for choice in ACCOMMODATION_TYPE_CHOICES]
@@ -94,15 +94,7 @@ class AccommodationTypeSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data["is_customized"] = False
-        type_name = validated_data.get("type_name").lower()
-        # is_customized = validated_data.get("is_customized")
-
-        # if not is_customized:
-        # choices에 있는 기본 타입인 경우 항상 생성
-        obj, created = AccommodationType.objects.get_or_create(
-            type_name=type_name, is_customized=False, defaults={"accommodation": validated_data.get("accommodation")}
-        )
-        return obj
+        return AccommodationType.objects.create(**validated_data)
 
         # 커스텀 타입인 경우 새로 생성
         # return AccommodationType.objects.create(**validated_data)
@@ -262,13 +254,7 @@ class AccommodationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accommodation
         fields = ["name", "phone_number", "description", "rules", "is_active"]
-
-    def validate_phone_number(self, value):
-        import re
-
-        if not re.match(r"^\d{2,3}-\d{3,4}-\d{4}$", value):
-            raise serializers.ValidationError("올바른 전화번호 형식이 아닙니다. (예: 02-123-4567 또는 010-1234-5678)")
-        return value.strip()
+        read_only_fields = ["phone_number"]
 
     def validate_name(self, value):
         if len(value.strip()) < 2:
