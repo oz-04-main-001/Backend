@@ -196,10 +196,11 @@ class AccommodationImageSerializer(serializers.ModelSerializer):
 class AccommodationHostManagementSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
     address = serializers.SerializerMethodField()
+    accommodation_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Accommodation
-        fields = ["id", "name", "image", "address"]
+        fields = ["id", "name", "image", "address", "accommodation_type"]
 
     def get_image(self, obj):
         representative_image = obj.images.filter(is_representative=True).first()
@@ -211,6 +212,9 @@ class AccommodationHostManagementSerializer(serializers.ModelSerializer):
 
     def get_address(self, obj):
         return obj.gps_info.address if obj.gps_info else None  # GPS 정보가 없을 경우 None 반환
+
+    def get_accommodation_type(self, obj):
+        return obj.accommodationtype.type_name
 
 
 class BookingCountRequestSerializer(serializers.Serializer):
