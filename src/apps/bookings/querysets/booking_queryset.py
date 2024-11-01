@@ -17,15 +17,9 @@ class BookingQuerySet(models.QuerySet):
             return None
 
     def filter_daily_bookings(self, host_profile, month, year, status_list):
-        return (
-            self.filter(
-                room__accommodation__host=host_profile,
-                check_in_datetime__year=year,
-                check_in_datetime__month=month,
-                status__in=status_list,
-            )
-            .annotate(date=TruncDate("check_in_datetime"))
-            .values("date")
-            .annotate(total_bookings=Count("id"))
-            .order_by("date")
+        return self.filter(
+            room__accommodation__host=host_profile,
+            check_in_datetime__year=year,
+            check_in_datetime__month=month,
+            status__in=status_list,
         )

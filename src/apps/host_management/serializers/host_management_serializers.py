@@ -250,3 +250,8 @@ class BookingCountResponseSerializer(serializers.Serializer):
         if value < 0:
             raise serializers.ValidationError("총 예약 수는 음수가 될 수 없습니다.")
         return value
+
+
+class ChangedBookingCountSerializer(serializers.Serializer):
+    start_date = serializers.DateField(required=True, format="%Y-%m-%d")
+    end_date = serializers.DateField(required=True, format="%Y-%m-%d")
