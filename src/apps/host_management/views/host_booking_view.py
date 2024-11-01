@@ -19,7 +19,8 @@ from apps.host_management.serializers.host_management_serializers import (
     BookingCountResponseSerializer,
     BookingRequestCheckSerializer,
     BookingSerializer,
-    BookingStatisticsSerializer, ChangedBookingCountSerializer,
+    BookingStatisticsSerializer,
+    ChangedBookingCountSerializer,
 )
 
 
@@ -114,7 +115,8 @@ class BookingRequestCheckView(generics.GenericAPIView):
                     "check_in_date": booking.check_in_date,
                     "check_out_date": booking.check_out_date,
                 },
-            }, status=status.HTTP_200_OK,
+            },
+            status=status.HTTP_200_OK,
         )
 
 
@@ -249,4 +251,3 @@ class TotalBookingCountView(generics.GenericAPIView):
         response_serializer = BookingCountResponseSerializer(sorted_counts, many=True)
 
         return Response(response_serializer.data, status=status.HTTP_200_OK)
-
