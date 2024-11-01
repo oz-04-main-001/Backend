@@ -125,7 +125,7 @@ class ModelTests(TestCase):
             states="Seoul",
             road_name="Gangnam-daero",
             address="123 Gangnam-daero",
-            location=Point(127.0295, 37.4979),
+            location=Point(127.0295, 37.4979),  # GeoJSON 대신 Point 객체 사용
         )
         self.assertEqual(gps_info.city, "Seoul")
         self.assertEqual(gps_info.location.coords, (127.0295, 37.4979))
