@@ -17,7 +17,7 @@ from rest_framework import filters, generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.fields import DictField, FileField, ImageField, ListField
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -45,6 +45,7 @@ from apps.amenities.serializers.amenities_serializers import (
     AmenitySerializer,
 )
 from apps.common.choices import ACCOMMODATION_TYPE_CHOICES, AMENITY_CHOICES
+from apps.common.permissions.host_permission import IsHost
 from apps.users.models import BusinessUser
 
 User = get_user_model()
@@ -53,7 +54,7 @@ User = get_user_model()
 class BaseAccommodationView:
     """기본 숙소 뷰 - 호스트 생성 로직"""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsHost]
 
     def get_or_create_host(self):
         superuser = User.objects.filter(is_superuser=True).first()
@@ -73,7 +74,7 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
 
     parser_classes = (MultiPartParser, FormParser)
     serializer_class = AccommodationSerializer
-    permission_classes = [AllowAny]  # [isauthentication, ishost]
+    permission_classes = [IsAuthenticated, IsHost]
 
     @extend_schema(
         request=inline_serializer(
@@ -378,7 +379,7 @@ class GPSInfoView(BaseAccommodationView, generics.RetrieveUpdateAPIView):
 
 
 class AmenityChoicesView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsHost]
 
     @extend_schema(
         summary="어메니티 선택지 목록 조회",
@@ -396,7 +397,7 @@ class AmenityChoicesView(APIView):
 
 
 class AccommodationChoicesView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsHost]
 
     @extend_schema(
         summary="숙소유형 목록 조회",

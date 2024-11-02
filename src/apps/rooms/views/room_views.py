@@ -26,6 +26,7 @@ from apps.amenities.serializers.amenities_serializers import (
 )
 from apps.bookings.models import Booking
 from apps.common.choices import OPTION_CHOICES
+from apps.common.permissions.host_permission import IsHost
 from apps.rooms.models import Room, Room_Image, RoomInventory, RoomType
 from apps.rooms.serializers import room_serializer as serializers
 from apps.rooms.serializers.room_serializer import (
@@ -43,7 +44,7 @@ User = get_user_model()
 class BaseRoomView:
     """기본 Room 뷰"""
 
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsHost]
 
 
 class RoomListCreateView(BaseRoomView, APIView):
@@ -51,7 +52,7 @@ class RoomListCreateView(BaseRoomView, APIView):
 
     parser_classes = (MultiPartParser, FormParser)
     serializer_class = RoomSerializer
-    permission_classes = [AllowAny]  # [isauthentication, ishost]
+    permission_classes = [IsAuthenticated, IsHost]  # [isauthentication, ishost]
 
     @extend_schema(
         request=inline_serializer(
@@ -374,7 +375,7 @@ class RoomInventoryView(BaseRoomView, generics.RetrieveUpdateAPIView):
 
 
 class OptionChoicesView(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsHost]
 
     @extend_schema(
         summary="옵션 선택지 목록 조회",

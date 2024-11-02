@@ -16,13 +16,14 @@ User = get_user_model()
 class IntegrationTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_superuser(email="test@test.com", password="testpass123")
+        self.user = User.objects.create_superuser(email="test@test.com", password="testpass123", user_type="host")
         self.test_document = SimpleUploadedFile(
             name="test_document.pdf", content=b"test document content", content_type="application/pdf"
         )
         self.host = BusinessUser.objects.create(
             user=self.user, business_document=self.test_document, business_number="123-45-67890"
         )
+        self.client.force_authenticate(user=self.user)
 
         self.amenity = Amenity.objects.create(
             id=1, name="수영장", category="basic", is_custom=False  # 명시적으로 ID 1을 가진 Amenity 생성
