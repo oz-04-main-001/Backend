@@ -51,7 +51,7 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
         날짜:  YYYY - MM - DD 형식 \n\n
         전화번호:  010-1234-5678 형식
         """
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, context={"ip_address": request.META.get("REMOTE_ADDR")})
         serializer.is_valid(raise_exception=True)
 
         validated_data = serializer.validated_data
@@ -136,8 +136,9 @@ class LoginAPIView(GenericAPIView):
         user = serializer.validated_data["user"]
 
         access_token = self.token_service.generate_tokens(user=user)
+        print(access_token)
 
-        response_serializer = LoginResponseSerializer(access_token=access_token, user_type=user.user_type)
+        response_serializer = LoginResponseSerializer({"access_token": access_token, "user_type": user.user_type})
 
         return Response(
             response_serializer.data,
@@ -224,8 +225,16 @@ class UserDeletionRequestAPIView(GenericAPIView):
 
         withdraw_reason = request.data.get("withdraw_reason", "")  # 당장은 없기에 시리얼 라이저 x
         user = request.user
+        ip_address = request.META.get("REMOTE_ADDR")
 
-        serializer = self.get_serializer(data=request.data, context={"email": user.email})
+        serializer = self.get_serializer(
+            data=request.data,
+            context={
+                "email": user.email,
+                "ip_address": ip_address,
+            },
+        )
+
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data.get("email")
@@ -316,7 +325,9 @@ class PasswordResetRequestAPIView(GenericAPIView):
         description="비밀번호 재설정 요청 API입니다. 입력한 이메일로 검증 메일 발송",
     )
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        ip_address = request.META.get("REMOTE_ADDR")
+
+        serializer = self.get_serializer(data=request.data, context={"ip_address": ip_address})
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]

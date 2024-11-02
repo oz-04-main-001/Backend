@@ -27,6 +27,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-6)2#$$liu%$bzu8-%q-87hk#_#m=ycw2^)1ekjs*z9tv$*p*@k"
 
 # SECURITY WARNING: don't run with debug turned on in production!
+# DEBUG = os.getenv("DEBUG", "True")
 DEBUG = True
 
 ALLOWED_HOSTS = ["52.78.188.221", "localhost", "127.0.0.1"]
@@ -196,11 +197,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -290,19 +286,56 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 
 # Aws S3 settings
 
-# django-storages를 사용한 S3 설정
-INSTALLED_APPS += ["storages"]
+if not DEBUG:
+    # 프로덕션 환경 - S3 + CloudFront 설정
+    INSTALLED_APPS += ["storages"]
 
-# AWS S3 관련 설정
-AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
+    # CloudFront 도메인 이름 설정
+    CLOUDFRONT_DOMAIN = os.getenv("CLOUDFRONT_DOMAIN")  # 예: 'd1234abcd.cloudfront.net'
 
+    # STORAGES 설정
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+                "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+                "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+                "region_name": os.getenv("AWS_S3_REGION_NAME"),
+                "location": "media",
+                "default_acl": None,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+                "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+                "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+                "region_name": os.getenv("AWS_S3_REGION_NAME"),
+                "custom_domain": CLOUDFRONT_DOMAIN,  # CloudFront 도메인 사용
+                "location": "static",
+                "default_acl": None,
+            },
+        },
+    }
 
-# 정적 파일 및 미디어 파일 설정
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    # CloudFront를 사용한 URL 설정
+    MEDIA_URL = f"https://{CLOUDFRONT_DOMAIN}/backend/media/"
+    STATIC_URL = f"https://{CLOUDFRONT_DOMAIN}/backend/static/"
 
+    # 쿼리 인증 매개변수를 URL에 포함하지 않음
+    AWS_QUERYSTRING_AUTH = False
+
+    # STATIC_ROOT 경로 설정 (임시 파일 시스템 경로)
+    STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")  # 로컬 파일 시스템 경로 지정
+
+else:
+    # 개발 환경 - 로컬 파일 시스템 설정
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+    STATIC_URL = "/static/"
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # # 캐시 설정 (선택 사항)
 # AWS_QUERYSTRING_AUTH = False  # S3 링크에 인증 매개변수를 포함하지 않음

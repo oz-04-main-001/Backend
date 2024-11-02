@@ -34,7 +34,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer[User]):  # type: ig
         return value
 
     def validate_email(self, email: str) -> str:
-        if OTPService().get_otp_from_redis(email):
+        otp_service = OTPService()
+        ip_address = self.context.get("ip_address")
+
+        if not otp_service.is_request_allowed(to_email=email, ip_address=ip_address):
+            raise serializers.ValidationError("Too many OTP requests. Please try again later.")
+        if otp_service.get_otp_from_redis(email):
             raise serializers.ValidationError("OTP already sent. Please try again after a few minutes.")
         return email
 
@@ -85,10 +90,15 @@ class AccessTokenResponseSerializer(serializers.Serializer):
 
 
 class UserOTPRequestSerializer(serializers.Serializer):
-    def validate(self, data: dict) -> dict:
-        email = self.context.get("email")
 
-        if OTPService().get_otp_from_redis(email):
+    def validate(self, data: dict) -> dict:
+        otp_service = OTPService()
+        email = self.context.get("email")
+        ip_address = self.context.get("ip_address")
+
+        if not otp_service.is_request_allowed(to_email=email, ip_address=ip_address):
+            raise serializers.ValidationError("Too many OTP requests. Please try again later.")
+        if otp_service.get_otp_from_redis(email):
             raise serializers.ValidationError("OTP already sent. Please try again after a few minutes.")
 
         data["email"] = email
@@ -134,11 +144,16 @@ class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, email: str) -> str:
+        otp_service = OTPService()
+        ip_address = self.context.get("ip_address")
 
         if not UserAuthService().check_if_email_exists(email):
             raise serializers.ValidationError("No user is associated with this email.")
 
-        if OTPService().get_otp_from_redis(email):
+        if not otp_service.is_request_allowed(to_email=email, ip_address=ip_address):
+            raise serializers.ValidationError("Too many OTP requests. Please try again later.")
+
+        if otp_service.get_otp_from_redis(email):
             raise serializers.ValidationError("OTP already sent. Please try again after a few minutes.")
 
         return email
