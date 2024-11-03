@@ -54,7 +54,7 @@ User = get_user_model()
 class BaseAccommodationView:
     """기본 숙소 뷰 - 호스트 생성 로직"""
 
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
     def get_or_create_host(self):
         superuser = User.objects.filter(is_superuser=True).first()
@@ -74,7 +74,7 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
 
     parser_classes = (MultiPartParser, FormParser)
     serializer_class = AccommodationSerializer
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
     @extend_schema(
         request=inline_serializer(
@@ -104,6 +104,9 @@ class AccommodationListCreateView(BaseAccommodationView, APIView):
     )
     def post(self, request):
         try:
+            # 비즈니스 처리후 변경
+            # host = request.user.business_profile
+
             data = {
                 "accommodation": json.loads(request.data.get("accommodation")),
                 "accommodation_type": json.loads(request.data.get("accommodation_type")),
@@ -379,7 +382,7 @@ class GPSInfoView(BaseAccommodationView, generics.RetrieveUpdateAPIView):
 
 
 class AmenityChoicesView(APIView):
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
     @extend_schema(
         summary="어메니티 선택지 목록 조회",
@@ -397,7 +400,7 @@ class AmenityChoicesView(APIView):
 
 
 class AccommodationChoicesView(APIView):
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
     @extend_schema(
         summary="숙소유형 목록 조회",

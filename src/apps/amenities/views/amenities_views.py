@@ -25,14 +25,14 @@ from apps.rooms.models import Room
 class AmenityListView(generics.ListAPIView):
     queryset = Amenity.objects.all()
     serializer_class = AmenitySerializer
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
 
 @extend_schema(tags=["Host"])
 class AccommodationAmenityView(generics.RetrieveUpdateDestroyAPIView):
     """숙소별 부대시설 조회, 수정, 삭제"""
 
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
@@ -130,14 +130,14 @@ class AccommodationAmenityView(generics.RetrieveUpdateDestroyAPIView):
 class OptionListView(generics.ListAPIView):
     queryset = Option.objects.all()
     serializer_class = OptionSerializer
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
 
 @extend_schema(tags=["Host"])
 class RoomOptionView(generics.RetrieveUpdateDestroyAPIView):
     """룸별 옵션 조회, 수정, 삭제"""
 
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
     serializer_class = OptionSerializer
 
     def get_queryset(self):
@@ -210,7 +210,7 @@ class RoomOptionView(generics.RetrieveUpdateDestroyAPIView):
 @extend_schema(tags=["Host"])
 class CustomOptionListView(generics.ListAPIView):
     serializer_class = OptionSerializer
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
     def get_queryset(self):
         if not self.request.user.is_authenticated:

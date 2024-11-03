@@ -44,7 +44,7 @@ User = get_user_model()
 class BaseRoomView:
     """기본 Room 뷰"""
 
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
 
 class RoomListCreateView(BaseRoomView, APIView):
@@ -52,7 +52,7 @@ class RoomListCreateView(BaseRoomView, APIView):
 
     parser_classes = (MultiPartParser, FormParser)
     serializer_class = RoomSerializer
-    permission_classes = [IsAuthenticated, IsHost]  # [isauthentication, ishost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
     @extend_schema(
         request=inline_serializer(
@@ -375,7 +375,7 @@ class RoomInventoryView(BaseRoomView, generics.RetrieveUpdateAPIView):
 
 
 class OptionChoicesView(APIView):
-    permission_classes = [IsAuthenticated, IsHost]
+    permission_classes = [AllowAny]  # [IsAuthenticated, IsHost]
 
     @extend_schema(
         summary="옵션 선택지 목록 조회",

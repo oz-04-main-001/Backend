@@ -13,6 +13,7 @@ from .views.auth_view import (
     UserRegistrationRequestAPIView,
     UserRegistrationVerifyAPIView,
 )
+from .views.host_auth_view import HostRegistrationAPIView
 
 app_name = "auth"  # 앱 이름 설정
 
@@ -63,5 +64,10 @@ urlpatterns = [
         "password/reset/",
         PasswordResetAPIView.as_view(),
         name="password-reset",
+    ),
+    path(
+        "host/register/",
+        HostRegistrationAPIView.as_view(),
+        name="host-register",
     ),
 ]
