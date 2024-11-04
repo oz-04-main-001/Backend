@@ -58,19 +58,19 @@ services:
       - ./frontend/build:/usr/share/nginx/html
     depends_on:
       - django_gunicorn
-#      - frontend
-#
-#  frontend:
-#    build:
-#      context: ./frontend  # 프론트엔드 코드가 있는 디렉토리 경로
-#      dockerfile: Dockerfile.prod  # 프론트엔드 Dockerfile
-#    volumes:
-#      - frontend_data:/usr/share/nginx/html  # 프론트엔드 빌드 파일 공유
-#    expose:
-#      - "3000"
-#    environment:
-#      - NODE_ENV=production
+      - frontend
+
+  frontend:
+    build:
+      context: ./frontend  # 프론트엔드 코드가 있는 디렉토리 경로
+      dockerfile: Dockerfile.prod  # 프론트엔드 Dockerfile
+    volumes:
+      - frontend_data:/usr/share/nginx/html  # 프론트엔드 빌드 파일 공유
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
 
 volumes:
   postgres_data:
-#  frontend_data:
+  frontend_data:

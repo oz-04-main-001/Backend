@@ -10,16 +10,16 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.auth.serializers.auth_serializer import (
+    AccessTokenResponseSerializer,
+    AuthResponseSerializer,
+    LoginResponseSerializer,
     LoginSerializer,
     PasswordResetRequestSerializer,
     PasswordResetSerializer,
+    UserEmailLookupResponseSerializer,
     UserEmailLookupSerializer,
     UserOTPRequestSerializer,
     UserRegistrationSerializer,
-    AuthResponseSerializer,
-    LoginResponseSerializer,
-    AccessTokenResponseSerializer,
-    UserEmailLookupResponseSerializer,
 )
 from apps.auth.serializers.token_serializer import TokenSerializer
 from apps.auth.services.auth_service import UserAuthService
@@ -29,7 +29,7 @@ from apps.common.util.email.serializers.otp_serializer import (
     UserOTPVerificationSerializer,
 )
 from apps.common.util.email.services.otp_service import OTPService
-from apps.users.models import User, WithdrawManager, BusinessUser  # type: ignore
+from apps.users.models import BusinessUser, User, WithdrawManager  # type: ignore
 
 
 @extend_schema(tags=["User"])

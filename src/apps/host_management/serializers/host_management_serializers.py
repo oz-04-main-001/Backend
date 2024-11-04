@@ -259,5 +259,3 @@ class BookingCountResponseSerializer(serializers.Serializer):
 class ChangedBookingCountSerializer(serializers.Serializer):
     start_date = serializers.DateField(required=True, format="%Y-%m-%d")
     end_date = serializers.DateField(required=True, format="%Y-%m-%d")
-
-
