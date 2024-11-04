@@ -28,7 +28,7 @@ SECRET_KEY = "django-insecure-6)2#$$liu%$bzu8-%q-87hk#_#m=ycw2^)1ekjs*z9tv$*p*@k
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = os.getenv("DEBUG", "True")
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ["52.78.188.221", "localhost", "127.0.0.1"]
 
@@ -285,13 +285,9 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 
 
 # Aws S3 settings
-
 if not DEBUG:
-    # 프로덕션 환경 - S3 + CloudFront 설정
+    # 프로덕션 환경 - S3 설정만 사용
     INSTALLED_APPS += ["storages"]
-
-    # CloudFront 도메인 이름 설정
-    CLOUDFRONT_DOMAIN = os.getenv("CLOUDFRONT_DOMAIN")  # 예: 'd1234abcd.cloudfront.net'
 
     # STORAGES 설정
     STORAGES = {
@@ -313,16 +309,15 @@ if not DEBUG:
                 "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
                 "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
                 "region_name": os.getenv("AWS_S3_REGION_NAME"),
-                "custom_domain": CLOUDFRONT_DOMAIN,  # CloudFront 도메인 사용
                 "location": "static",
                 "default_acl": None,
             },
         },
     }
-
-    # CloudFront를 사용한 URL 설정
-    MEDIA_URL = f"https://{CLOUDFRONT_DOMAIN}/backend/media/"
-    STATIC_URL = f"https://{CLOUDFRONT_DOMAIN}/backend/static/"
+    BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+    # S3 URL 설정
+    MEDIA_URL = f"https://{BUCKET_NAME}.s3.amazonaws.com/media/"
+    STATIC_URL = f"https://{BUCKET_NAME}.s3.amazonaws.com/static/"
 
     # 쿼리 인증 매개변수를 URL에 포함하지 않음
     AWS_QUERYSTRING_AUTH = False
@@ -337,5 +332,6 @@ else:
 
     STATIC_URL = "/static/"
     STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
 # # 캐시 설정 (선택 사항)
 # AWS_QUERYSTRING_AUTH = False  # S3 링크에 인증 매개변수를 포함하지 않음

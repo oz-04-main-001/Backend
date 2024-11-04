@@ -409,3 +409,6 @@ class OptionChoicesView(APIView):
     def get(self, request):
         choices = [choice[0] for choice in OPTION_CHOICES]  # value만 반환
         return Response(choices)
+
+
+

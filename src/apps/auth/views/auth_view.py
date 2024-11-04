@@ -29,7 +29,7 @@ from apps.common.util.email.serializers.otp_serializer import (
     UserOTPVerificationSerializer,
 )
 from apps.common.util.email.services.otp_service import OTPService
-from apps.users.models import User, WithdrawManager  # type: ignore
+from apps.users.models import User, WithdrawManager, BusinessUser  # type: ignore
 
 
 @extend_schema(tags=["User"])
