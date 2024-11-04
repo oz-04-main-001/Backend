@@ -53,12 +53,12 @@ SOCIAL_LOGIN_CHOICES = [
 
 # Room type choices
 ROOM_TYPE_CHOICES = [
-    ("deluxe", "Deluxe"),
-    ("suite", "Suite"),
-    ("standard", "Standard"),
-    ("premium", "Premium"),
-    ("family", "Family"),
-    ("economy", "Economy"),
+    ("디럭스", "디럭스"),
+    ("스위트룸", "스위트룸"),
+    ("스탠다드", "스탠다드"),
+    ("프리미엄", "프리미엄"),
+    ("패밀리", "패밀리"),
+    ("이코노미", "이코노미"),
 ]
 
 # Accommodation type choices
