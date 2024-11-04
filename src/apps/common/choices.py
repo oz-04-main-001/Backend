@@ -101,6 +101,10 @@ AMENITY_CHOICES = [
     ("조식포함", "조식포함"),
 ]
 
+ROOM_STRUCTURE_CHOICES = [
+    ("room_quantity", "방 개수"),
+]
+
 # Option 카테고리
 OPTION_CATEGORIES_CHOICES = [
     ("service", "Service"),
@@ -221,12 +225,12 @@ OPTION_CHOICES_BY_CATEGORY = {
 }
 
 BED_TYPE_CHOICES = [
-    ("single", "싱글"),
-    ("super_single", "슈퍼싱글"),
-    ("double", "더블"),
-    ("queen", "퀸"),
-    ("king", "킹"),
-    ("none", "없음"),
+    ("싱글", "싱글"),
+    ("슈퍼싱글", "슈퍼싱글"),
+    ("더블", "더블"),
+    ("퀸", "퀸"),
+    ("킹", "킹"),
+    ("없음", "없음"),
 ]
 
 STATE_CHOICES = [

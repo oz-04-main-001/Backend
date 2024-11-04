@@ -33,6 +33,7 @@ from apps.rooms.serializers.room_serializer import (
     BedOptionSerializer,
     RoomImageSerializer,
     RoomInventorySerializer,
+    RoomQuantitySerializer,
     RoomSerializer,
     RoomTypeSerializer,
     RoomUpdateSerializer,
@@ -150,6 +151,23 @@ class RoomListCreateView(BaseRoomView, APIView):
                 response_serializer = BedOptionSerializer(option, context={"quantity": bed_option["quantity"]})
                 bed_option_response_data.append(response_serializer.data)
 
+            # 6. room_quantity 처리
+            room_quantity_data = request_data.get("room_quantity")
+            room_quantity_response_data = None
+
+            if room_quantity_data:
+                quantity_serializer = RoomQuantitySerializer(data=room_quantity_data)
+                if not quantity_serializer.is_valid():
+                    return Response(quantity_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+                option = Option.objects.create(name="room_quantity", category="room_structure", is_custom=False)
+
+                RoomOption.objects.create(
+                    room=room, option=option, custom_value=str(room_quantity_data["room_quantity"])
+                )
+
+                room_quantity_response_data = quantity_serializer.data
+
             # 5. 옵션처리
             options_data = request_data["options"]  # get 대신
             new_options = options_data["new"]  # dictionary key로
@@ -195,6 +213,7 @@ class RoomListCreateView(BaseRoomView, APIView):
                     "inventory": inventory_serializer.data,
                     "options": option_response_data,
                     "bed_options": bed_option_response_data,
+                    # "room_quantity": room_quantity_response_data,
                 },
                 status=status.HTTP_201_CREATED,
             )

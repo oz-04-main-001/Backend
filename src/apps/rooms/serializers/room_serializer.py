@@ -8,7 +8,11 @@ from apps import accommodations
 from apps.accommodations.models import AccommodationType
 from apps.amenities.models import Option, RoomOption
 from apps.amenities.serializers.amenities_serializers import OptionSerializer
-from apps.common.choices import BED_TYPE_CHOICES, ROOM_TYPE_CHOICES
+from apps.common.choices import (
+    BED_TYPE_CHOICES,
+    ROOM_STRUCTURE_CHOICES,
+    ROOM_TYPE_CHOICES,
+)
 from apps.rooms.models import Room, Room_Image, RoomInventory, RoomType
 
 
@@ -88,7 +92,43 @@ class RoomInventorySerializer(serializers.ModelSerializer):
         return value
 
 
+# 기존의 BedOptionSerializer 등 다른 시리얼라이저들은 유지...
+
+
+class RoomQuantitySerializer(serializers.ModelSerializer):
+    quantity = serializers.IntegerField(min_value=1, required=True, write_only=True)
+    name = serializers.ChoiceField(choices=ROOM_STRUCTURE_CHOICES, default="room_quantity", write_only=True)  # 추가
+
+    class Meta:
+        model = Option
+        fields = ["id", "quantity", "name"]  # name 추가
+
+    def validate(self, data):
+        quantity = data.get("quantity", 0)
+        name = data.get("name")
+
+        if not name in dict(ROOM_STRUCTURE_CHOICES):
+            raise serializers.ValidationError(
+                f"Invalid structure type. Must be one of: {', '.join(dict(ROOM_STRUCTURE_CHOICES).keys())}"
+            )
+
+        if quantity < 1:
+            raise serializers.ValidationError("방 개수는 1개 이상이어야 합니다.")
+        elif quantity > 10:
+            raise serializers.ValidationError("방 개수가 너무 많습니다. (최대 10개)")
+
+        return data
+
+    def to_representation(self, instance):
+        """응답 데이터에 quantity 포함"""
+        data = super().to_representation(instance)
+        data["quantity"] = int(self.context.get("quantity", "1"))
+        return data
+
+
 class RoomSerializer(serializers.ModelSerializer):
+    room_quantity = RoomQuantitySerializer(required=False)
+
     class Meta:
         model = Room
         fields = [
@@ -103,6 +143,7 @@ class RoomSerializer(serializers.ModelSerializer):
             "check_in_time",
             "check_out_time",
             "is_available",
+            "room_quantity",
         ]
         read_only_fields = ["id", "stay_type", "max_capacity"]
         extra_kwargs = {
@@ -115,7 +156,7 @@ class RoomSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, data):
-        # 기존 validation
+        # 기존 validation 로직 유지
         if not data.get("capacity"):
             raise serializers.ValidationError({"capacity": "Capacity is required"})
 
@@ -136,37 +177,81 @@ class RoomSerializer(serializers.ModelSerializer):
         stay_type = data.get("stay_type")
         if check_in and check_out:
             if stay_type == False:  # 대실일 경우
-                if check_in >= check_out:  # 대실은 체크아웃이 체크인보다 빨라야 함
+                if check_in >= check_out:
                     raise serializers.ValidationError(
                         {"check_in_time": "대실의 경우 체크아웃 시간이 체크인 시간보다 빨라야 합니다."}
                     )
-
             else:  # 숙박일 경우
-                if check_in <= check_out:  # 숙박은 체크인이 체크아웃보다 빨라야 함
+                if check_in <= check_out:
                     raise serializers.ValidationError(
                         {"check_in_time": "숙박의 경우 체크인 시간이 체크아웃 시간보다 빨라야 합니다."}
                     )
+
         if len(data["name"]) < 2:
             raise serializers.ValidationError({"name": "Room name must be at least 2 characters long"})
 
-        # 이미지 validation
+        return data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+
+        room_option = RoomOption.objects.filter(
+            room=instance, option__name="room_quantity", option__category="structure"
+        ).first()
+
+        # room_quantity 직접 설정
+        if room_option:
+            # RoomQuantitySerializer의 context 설정
+            room_quantity_serializer = RoomQuantitySerializer(
+                room_option.option, context={"quantity": room_option.custom_value}
+            )
+            data["room_quantity"] = room_quantity_serializer.data
+        else:
+            # 기본값 설정
+            data["room_quantity"] = {"quantity": 1}
 
         return data
 
     def create(self, validated_data):
+        room_quantity_data = validated_data.pop("room_quantity", None)
+
         validated_data["stay_type"] = True
         validated_data["max_capacity"] = 1000
         instance = super().create(validated_data)
-        # getattr를 사용하여 더 안전하게 처리
         instance.accommodation_name = getattr(instance.accommodation, "name", None)
+
+        # 방 개수 옵션 처리
+        if room_quantity_data:
+            quantity = room_quantity_data.get("quantity", 1)
+
+            option = Option.objects.create(name="room_quantity", category="structure", is_custom=False)
+
+            RoomOption.objects.create(room=instance, option=option, custom_value=str(quantity))
+
         instance.save()
-        return instance  # 1. Room 생성
+        return instance
 
     def update(self, instance, validated_data):
-        validated_data.pop("accommodation", None)
+        room_quantity_data = validated_data.pop("room_quantity", None)
 
+        # 기본 필드 업데이트
+        validated_data.pop("accommodation", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
+
+        # 방 개수 업데이트
+        if room_quantity_data is not None:
+            quantity = room_quantity_data.get("quantity", 1)
+            room_option = RoomOption.objects.filter(
+                room=instance, option__category="structure", option__name="room_quantity"
+            ).first()
+
+            if room_option:
+                room_option.custom_value = str(quantity)
+                room_option.save()
+            else:
+                option = Option.objects.create(name="room_quantity", category="structure", is_custom=False)
+                RoomOption.objects.create(room=instance, option=option, custom_value=str(quantity))
 
         instance.accommodation_name = getattr(instance.accommodation, "name", None)
         instance.save()
@@ -256,7 +341,7 @@ class BedOptionSerializer(serializers.ModelSerializer):
         bed_type = data.get("name")
         quantity = data.get("quantity", 0)
 
-        if bed_type == "none":
+        if bed_type == "없음":
             # 침대가 없는 경우 수량을 0으로 강제
             data["quantity"] = 0
         elif quantity < 0:
