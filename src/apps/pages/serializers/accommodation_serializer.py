@@ -165,6 +165,7 @@ class BookingAccommodationInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Accommodation
         fields = [
+            "id",
             "name",
             "representative_image",
             "address",

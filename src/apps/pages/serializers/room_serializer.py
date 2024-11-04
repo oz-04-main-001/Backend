@@ -86,9 +86,9 @@ class RoomSerializer(serializers.ModelSerializer):
         return {"total_beds": bed_total_count, "bed_type_num": bed_type_num}
 
     def get_room_count(self, obj: Room) -> int:
-        room_inventory = RoomInventory.objects.filter(room=obj.id).first()
-        if room_inventory:
-            return room_inventory.count_room
+        room_structure = RoomOption.objects.filter(room=obj.id, option__category="structure").first()
+        if room_structure:
+            return room_structure.custom_value
         return 0
 
 

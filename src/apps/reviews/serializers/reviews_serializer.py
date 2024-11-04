@@ -54,7 +54,8 @@ class ReviewDetailUpdateDeleteSerializer(serializers.ModelSerializer):
         return obj.rating.rating if hasattr(obj.rating, "rating") else None
 
     def get_comment(self, obj):
-        serializer = CommentSerializer(obj, many=True)
+        comments = Comment.objects.filter(review=obj)  # 해당 리뷰에 대한 댓글 쿼리셋을 가져옴
+        serializer = CommentSerializer(comments, many=True)  # 리스트 형태로 전달
         return serializer.data
 
     def update(self, instance, validated_data):
