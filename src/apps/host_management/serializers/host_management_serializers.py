@@ -222,7 +222,8 @@ class BookingCountRequestSerializer(serializers.Serializer):
     year = serializers.IntegerField(default=datetime.now().year)
     status_list = serializers.ListField(
         child=serializers.CharField(),
-        default=["confirmed", "paid", "partially_paid", "check_in"],
+        default=["confirmed", "check_in"],
+        # "paid", "partially_paid"
     )
 
     def validate_month(self, value):
