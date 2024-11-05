@@ -136,9 +136,15 @@ class LoginAPIView(GenericAPIView):
         user = serializer.validated_data["user"]
 
         access_token = self.token_service.generate_tokens(user=user)
-        print(access_token)
 
-        response_serializer = LoginResponseSerializer({"access_token": access_token, "user_type": user.user_type})
+        response_data = {
+            "access_token": access_token,
+            "user_type": user.user_type,
+            "name": user.name,
+            "phone_number": user.phone_number,
+        }
+
+        response_serializer = LoginResponseSerializer(response_data)
 
         return Response(
             response_serializer.data,

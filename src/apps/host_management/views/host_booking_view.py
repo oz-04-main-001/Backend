@@ -227,6 +227,9 @@ class TotalBookingCountView(generics.GenericAPIView):
         date_booking_counts = defaultdict(int)
 
         for booking in daily_bookings:
+            print(booking.check_in_datetime.date())
+
+        for booking in daily_bookings:
             current_date = booking.check_in_datetime.date()
             check_out_date = booking.check_out_datetime.date()
 

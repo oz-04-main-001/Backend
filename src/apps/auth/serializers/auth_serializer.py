@@ -83,6 +83,8 @@ class LoginSerializer(serializers.Serializer):
 class LoginResponseSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     user_type = serializers.CharField()
+    name = serializers.CharField()
+    phone_number = serializers.CharField()
 
 
 class AccessTokenResponseSerializer(serializers.Serializer):
