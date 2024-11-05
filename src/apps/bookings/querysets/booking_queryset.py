@@ -1,7 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models import Count
-from django.db.models.functions import TruncDate
 
 
 class BookingQuerySet(models.QuerySet):

@@ -64,3 +64,22 @@ class OTPService:
         email = to_email if isinstance(to_email, list) else [to_email]
         send_mail(subject, message, settings.EMAIL_HOST_USER, email)
         return otp
+
+    @staticmethod
+    def is_request_allowed(to_email: str, ip_address: str, limit=5, time_window=60) -> bool:
+        email_ip_key = f"otp_request_count:{to_email}:{ip_address}"
+        count = redis_client.get(email_ip_key)
+
+        if count is None:
+            count = 0
+        else:
+            count = int(count)
+
+        if count >= limit:
+            return False
+
+        redis_client.incr(email_ip_key)
+        if count == 0:
+            redis_client.expire(email_ip_key, time_window)
+
+        return True

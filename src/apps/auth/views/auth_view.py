@@ -10,9 +10,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.auth.serializers.auth_serializer import (
+    AccessTokenResponseSerializer,
+    AuthResponseSerializer,
+    LoginResponseSerializer,
     LoginSerializer,
     PasswordResetRequestSerializer,
     PasswordResetSerializer,
+    UserEmailLookupResponseSerializer,
     UserEmailLookupSerializer,
     UserOTPRequestSerializer,
     UserRegistrationSerializer,
@@ -25,7 +29,7 @@ from apps.common.util.email.serializers.otp_serializer import (
     UserOTPVerificationSerializer,
 )
 from apps.common.util.email.services.otp_service import OTPService
-from apps.users.models import User, WithdrawManager  # type: ignore
+from apps.users.models import BusinessUser, User, WithdrawManager  # type: ignore
 
 
 @extend_schema(tags=["User"])
@@ -37,6 +41,9 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
     @extend_schema(
         summary="사용자 회원가입 API",
         request=UserRegistrationSerializer,
+        responses={
+            200: AuthResponseSerializer,
+        },
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
@@ -44,7 +51,7 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
         날짜:  YYYY - MM - DD 형식 \n\n
         전화번호:  010-1234-5678 형식
         """
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, context={"ip_address": request.META.get("REMOTE_ADDR")})
         serializer.is_valid(raise_exception=True)
 
         validated_data = serializer.validated_data
@@ -60,8 +67,10 @@ class UserRegistrationRequestAPIView(GenericAPIView):  # type: ignore
 
         self.otp_service.save_user_data(validated_data)
 
+        response_serializer = AuthResponseSerializer({"message": "OTP has been sent to your email. Please verify."})
+
         return Response(
-            {"message": "OTP has been sent to your email. Please verify."},
+            response_serializer.data,
             status=status.HTTP_200_OK,
         )
 
@@ -76,6 +85,9 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
 
     @extend_schema(
         request=RegistrationOTPVerificationSerializer,
+        responses={
+            200: AuthResponseSerializer,
+        },
         summary="회원가입 OTP 검증 API",
         description="해당 API는 OTP 검증을 위한 api입니다.",
     )
@@ -95,8 +107,10 @@ class UserRegistrationVerifyAPIView(GenericAPIView):
 
         self.user_auth_service.create_user(validated_data=user_validated_data)
 
+        response_serializer = AuthResponseSerializer({"message": "OTP verified and user created successfully."})
+
         return Response(
-            {"message": "OTP verified and user created successfully."},
+            response_serializer.data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -109,6 +123,9 @@ class LoginAPIView(GenericAPIView):
 
     @extend_schema(
         request=LoginSerializer,
+        responses={
+            200: LoginResponseSerializer,
+        },
         summary="사용자 로그인 API",
         description="이메일과 비밀번호를 입력하고 로그인하는 API입니다",
     )
@@ -120,11 +137,17 @@ class LoginAPIView(GenericAPIView):
 
         access_token = self.token_service.generate_tokens(user=user)
 
+        response_data = {
+            "access_token": access_token,
+            "user_type": user.user_type,
+            "name": user.name,
+            "phone_number": user.phone_number,
+        }
+
+        response_serializer = LoginResponseSerializer(response_data)
+
         return Response(
-            {
-                "access_token": access_token,
-                "user_type": user.user_type,
-            },
+            response_serializer.data,
             status=status.HTTP_200_OK,
         )
 
@@ -138,6 +161,9 @@ class CustomTokenRefreshView(GenericAPIView):
 
     @extend_schema(
         request=TokenSerializer,
+        responses={
+            200: AccessTokenResponseSerializer,
+        },
         summary="Access token 재발급 API",
         description="Access Token을 재발급합니다. \n\n 만약 Refresh token도 만료 시 401 에러 -> 로그인 페이지",
     )
@@ -151,11 +177,9 @@ class CustomTokenRefreshView(GenericAPIView):
 
         try:
             new_access_token = self.token_service.refresh_access_token(access_token=access_token)
-
+            response_serializer = AccessTokenResponseSerializer({"access_token": new_access_token})
             return Response(
-                {
-                    "access_token": new_access_token,
-                },
+                response_serializer.data,
                 status=status.HTTP_200_OK,
             )
         except AuthenticationFailed as e:
@@ -170,6 +194,9 @@ class LogoutAPIView(GenericAPIView):
     token_service = TokenService()
 
     @extend_schema(
+        responses={
+            200: AuthResponseSerializer,
+        },
         summary="사용자 로그아웃 API",
     )
     def post(self, request, *args, **kwargs):
@@ -182,7 +209,8 @@ class LogoutAPIView(GenericAPIView):
 
         self.token_service.delete_refresh_token(user.id)
 
-        return Response({"message": "Successfully logged out."}, status=status.HTTP_200_OK)
+        response_serializer = AuthResponseSerializer({"message": "Successfully logged out."})
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["User"])
@@ -193,6 +221,9 @@ class UserDeletionRequestAPIView(GenericAPIView):
 
     @extend_schema(
         request=UserOTPRequestSerializer,
+        responses={
+            200: AuthResponseSerializer,
+        },
         summary="사용자 삭제 요청 API",
         description="사용자가 회원가입 시 등록했던 이메일로 otp 이메일 발송",
     )
@@ -200,8 +231,16 @@ class UserDeletionRequestAPIView(GenericAPIView):
 
         withdraw_reason = request.data.get("withdraw_reason", "")  # 당장은 없기에 시리얼 라이저 x
         user = request.user
+        ip_address = request.META.get("REMOTE_ADDR")
 
-        serializer = self.get_serializer(data=request.data, context={"email": user.email})
+        serializer = self.get_serializer(
+            data=request.data,
+            context={
+                "email": user.email,
+                "ip_address": ip_address,
+            },
+        )
+
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data.get("email")
@@ -210,8 +249,9 @@ class UserDeletionRequestAPIView(GenericAPIView):
 
         request.session["withdraw_reason"] = withdraw_reason
 
+        response_serializer = AuthResponseSerializer({"message": "OTP has been sent to your email. Please verify."})
         return Response(
-            {"message": "OTP has been sent to your email. Please verify."},
+            response_serializer.data,
             status=status.HTTP_200_OK,
         )
 
@@ -224,6 +264,9 @@ class UserDeletionVerifyAPIView(GenericAPIView):
 
     @extend_schema(
         request=UserOTPVerificationSerializer,
+        responses={
+            200: AuthResponseSerializer,
+        },
         summary="사용자 삭제 OTP 검증",
         description="해당 API는 OTP 검증 후 사용자를 비활성화합니다",
     )
@@ -240,7 +283,8 @@ class UserDeletionVerifyAPIView(GenericAPIView):
 
         del request.session["withdraw_reason"]
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        response_serializer = AuthResponseSerializer({"message": "User deleted successfully."})
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["User"])
@@ -251,6 +295,9 @@ class UserEmailLookupAPIView(GenericAPIView):
 
     @extend_schema(
         request=UserEmailLookupSerializer,
+        responses={
+            200: UserEmailLookupResponseSerializer,
+        },
         summary="사용자 이메일 조회 API",
     )
     def post(self, request, *args, **kwargs):
@@ -263,7 +310,9 @@ class UserEmailLookupAPIView(GenericAPIView):
 
         user = serializer.validated_data["user"]
 
-        return Response({"email": user.email}, status=status.HTTP_200_OK)
+        response_serializer = UserEmailLookupResponseSerializer({"email": user.email})
+
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["User"])
@@ -275,11 +324,16 @@ class PasswordResetRequestAPIView(GenericAPIView):
 
     @extend_schema(
         request=PasswordResetRequestSerializer,
+        responses={
+            200: AuthResponseSerializer,
+        },
         summary="비밀번호 재설정 요청 API",
         description="비밀번호 재설정 요청 API입니다. 입력한 이메일로 검증 메일 발송",
     )
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        ip_address = request.META.get("REMOTE_ADDR")
+
+        serializer = self.get_serializer(data=request.data, context={"ip_address": ip_address})
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]
@@ -287,8 +341,9 @@ class PasswordResetRequestAPIView(GenericAPIView):
         otp = self.otp_service.send_otp_email(email)
         self.otp_service.save_data(f"email:{otp}", email)
 
+        response_serializer = AuthResponseSerializer({"message": "OTP has been sent to your email."})
         return Response(
-            {"message": "OTP has been sent to your email."},
+            response_serializer.data,
             status=status.HTTP_200_OK,
         )
 
@@ -302,6 +357,9 @@ class PasswordResetVerifyAPIView(GenericAPIView):
 
     @extend_schema(
         request=UserOTPVerificationSerializer,
+        responses={
+            200: AuthResponseSerializer,
+        },
         summary="비밀번호 검증 API",
         description="해당 API는 OTP 검증 후 비밀번호 재설정 api로 이동",
     )
@@ -314,7 +372,8 @@ class PasswordResetVerifyAPIView(GenericAPIView):
 
         self.otp_service.delete_otp_from_redis(email)
 
-        return Response({"message": "OTP verified successfully."}, status=status.HTTP_200_OK)
+        response_serializer = AuthResponseSerializer({"message": "OTP verified successfully."})
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["User"])
@@ -326,6 +385,9 @@ class PasswordResetAPIView(GenericAPIView):
 
     @extend_schema(
         request=PasswordResetSerializer,
+        responses={
+            200: AuthResponseSerializer,
+        },
         summary="비밀번호 재설정 API",
         description="해당 API는 OTP 검증이 끝난 사용자만 접근 가능합니다. 새로운 비밀번호를 설정해주세요",
     )
@@ -350,10 +412,8 @@ class PasswordResetAPIView(GenericAPIView):
 
         self.otp_service.delete_data(f"email:{otp}")
 
+        response_serializer = AuthResponseSerializer({"message": "Password has been reset successfully."})
         return Response(
-            {"message": "Password has been reset successfully."},
+            response_serializer.data,
             status=status.HTTP_200_OK,
         )
-
-
-# 비밀번호 변경 후 로그인 에러 처리

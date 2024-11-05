@@ -15,8 +15,14 @@ class AccommodationAvailabilityRequestSerializer(serializers.Serializer):
     location = GeometryField(required=False, help_text="GeoJSON Point object")
     dist = serializers.IntegerField(required=False, help_text="Search radius in meters (e.g., 5000 for 5 km)")
 
+    def validate_guests_count(self, value: int) -> int:
+        if value < 1:
+            raise serializers.ValidationError("Guests count must be at least 1.")
+        return value
+
     def validate(self, data: dict) -> dict:
         coordinates = self.context.get("coordinates", "")
+        dist = data.get("dist", 5000)
 
         if data["check_out_date"] <= data["check_in_date"]:
             raise serializers.ValidationError("체크아웃 날짜는 체크인 날짜보다 늦어야 합니다.")
@@ -25,12 +31,18 @@ class AccommodationAvailabilityRequestSerializer(serializers.Serializer):
         if coordinates:
             try:
                 longitude, latitude = map(float, coordinates.strip("[]").split(","))
+                if not (-180 <= longitude <= 180 and -90 <= latitude <= 90):
+                    raise serializers.ValidationError(
+                        "Longitude must be between -180 and 180, and latitude between -90 and 90."
+                    )
                 data["location"] = Point(longitude, latitude, srid=4326)
             except ValueError:
                 raise serializers.ValidationError("Invalid coordinates format. Expected '[longitude,latitude]'.")
 
         if "location" not in data and "city" not in data:
             raise serializers.ValidationError("city 또는 location 중 하나는 입력해야 합니다.")
+        if dist is not None and dist <= 0:
+            raise serializers.ValidationError("Distance (dist) must be a positive integer.")
 
         return data
 

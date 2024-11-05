@@ -13,15 +13,13 @@ class AccommodationService:
         """도시 또는 위치 기반으로 예약 가능한 숙소 목록을 반환"""
         accommodations_in_location = Accommodation.objects.none()
 
+        # 위치 기반 필터링
+        if location:
+            accommodations_in_location = Accommodation.objects.filter_by_radius(location=location, radius=radius)
         # 도시 기반 필터링
-        if city:
+        elif city:
             city_variants = POSSIBLE_CITY.get(city, [city])
             accommodations_in_location = Accommodation.objects.filter_by_location_and_status(city=city_variants)
-        # 위치 기반 필터링
-        elif location:
-            accommodations_in_location = Accommodation.objects.filter(
-                gps_info__location__distance_lte=(location, D(m=radius))
-            )
 
         available_rooms = (
             Room.objects.filter_available_rooms(accommodations_in_location, guests_count)

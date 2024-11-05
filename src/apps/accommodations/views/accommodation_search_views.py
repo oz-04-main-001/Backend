@@ -1,11 +1,8 @@
-from django.contrib.gis.measure import D
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiExample, OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
-from rest_framework_gis.filters import DistanceToPointFilter
-from rest_framework_gis.pagination import GeoJsonPagination
 
 from apps.accommodations.models import Accommodation
 from apps.accommodations.serializers.accommodations_search_serializer import (

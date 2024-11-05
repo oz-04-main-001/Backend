@@ -27,9 +27,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-6)2#$$liu%$bzu8-%q-87hk#_#m=ycw2^)1ekjs*z9tv$*p*@k"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = os.getenv("DEBUG", "True")
+DEBUG = False
 
-ALLOWED_HOSTS = ["52.78.188.221", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "3.38.94.183", "staynest.site", "www.staynest.site"]
+
 
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
@@ -101,7 +103,14 @@ CORS_ALLOWED_ORIGINS = [
     "https://127.0.0.1:5173",
     "http://127.0.0.1:8000",
     "https://127.0.0.1:8000",
+    "http://3.38.94.183",  # EC2 퍼블릭 IP 추가
+    "https://3.38.94.183",  # HTTPS로 접근 시를 대비해 추가
+    "http://staynest.site",  # 도메인 추가
+    "https://staynest.site",  # HTTPS로 접근 시를 대비해 추가
+    "http://www.staynest.site",  # www 서브도메인 추가
+    "https://www.staynest.site",  # HTTPS로 접근 시를 대비해 추가
 ]
+
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -151,7 +160,6 @@ WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
     "default": {
-        # "ENGINE": "django.db.backends.postgresql_psycopg2",
         "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": os.getenv("DB_NAME", "oz_main"),
         "USER": os.getenv("DB_USER", "postgres"),
@@ -196,11 +204,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "/static/"
-STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
-MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -289,19 +292,53 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024  # 5MB
 
 
 # Aws S3 settings
+if not DEBUG:
+    # 프로덕션 환경 - S3 설정만 사용
+    INSTALLED_APPS += ["storages"]
 
-# # django-storages를 사용한 S3 설정
-# INSTALLED_APPS += ['storages']
-#
-# # AWS S3 관련 설정
-# AWS_ACCESS_KEY_ID = 'your-access-key-id'
-# AWS_SECRET_ACCESS_KEY = 'your-secret-access-key'
-# AWS_STORAGE_BUCKET_NAME = 'your-s3-bucket-name'
-# AWS_S3_REGION_NAME = 'your-region'  # 예: 'us-west-1'
-#
-# # 정적 파일 및 미디어 파일 설정
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-# STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-#
+    # STORAGES 설정
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+                "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+                "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+                "region_name": os.getenv("AWS_S3_REGION_NAME"),
+                "location": "media",
+                "default_acl": None,
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "access_key": os.getenv("AWS_ACCESS_KEY_ID"),
+                "secret_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+                "bucket_name": os.getenv("AWS_STORAGE_BUCKET_NAME"),
+                "region_name": os.getenv("AWS_S3_REGION_NAME"),
+                "location": "static",
+                "default_acl": None,
+            },
+        },
+    }
+    BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
+    # S3 URL 설정
+    MEDIA_URL = f"https://{BUCKET_NAME}.s3.amazonaws.com/media/"
+    STATIC_URL = f"https://{BUCKET_NAME}.s3.amazonaws.com/static/"
+
+    # 쿼리 인증 매개변수를 URL에 포함하지 않음
+    AWS_QUERYSTRING_AUTH = False
+
+    # STATIC_ROOT 경로 설정 (임시 파일 시스템 경로)
+    STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")  # 로컬 파일 시스템 경로 지정
+
+else:
+    # 개발 환경 - 로컬 파일 시스템 설정
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+
+    STATIC_URL = "/static/"
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
 # # 캐시 설정 (선택 사항)
 # AWS_QUERYSTRING_AUTH = False  # S3 링크에 인증 매개변수를 포함하지 않음
