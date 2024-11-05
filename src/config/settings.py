@@ -30,7 +30,7 @@ SECRET_KEY = "django-insecure-6)2#$$liu%$bzu8-%q-87hk#_#m=ycw2^)1ekjs*z9tv$*p*@k
 # DEBUG = os.getenv("DEBUG", "True")
 DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "3.38.94.183"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "3.38.94.183", "staynest.site", "www.staynest.site"]
 
 
 load_dotenv(os.path.join(BASE_DIR, ".env"))
@@ -105,6 +105,10 @@ CORS_ALLOWED_ORIGINS = [
     "https://127.0.0.1:8000",
     "http://3.38.94.183",  # EC2 퍼블릭 IP 추가
     "https://3.38.94.183",  # HTTPS로 접근 시를 대비해 추가
+    "http://staynest.site",  # 도메인 추가
+    "https://staynest.site",  # HTTPS로 접근 시를 대비해 추가
+    "http://www.staynest.site",  # www 서브도메인 추가
+    "https://www.staynest.site",  # HTTPS로 접근 시를 대비해 추가
 ]
 
 
