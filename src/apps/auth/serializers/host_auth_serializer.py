@@ -1,6 +1,7 @@
 import re
 
 from django.contrib.auth import authenticate, get_user_model
+from django.core.files.base import ContentFile
 from django.core.validators import validate_email
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -29,7 +30,7 @@ class HostRegisterSerializer(serializers.ModelSerializer[User]):  # type: ignore
         read_only_fields = ["user", "verified_at", "verification_status"]
         extra_kwargs = {
             "business_number": {"required": True},
-            "business_document": {"required": True},
+            "business_document": {"required": False},
             "business_email": {"required": True},
             "business_phonenumber": {"required": True},
         }
@@ -67,3 +68,12 @@ class HostRegisterSerializer(serializers.ModelSerializer[User]):  # type: ignore
             raise serializers.ValidationError("허용되지 않는 파일 형식입니다.")
 
         return value
+
+    def create(self, validated_data):
+        # business_document가 없는 경우 기본 파일 설정
+        if not validated_data.get("business_document"):
+            default_file_content = ContentFile(b"Default content")
+            validated_data["business_document"] = default_file_content
+            validated_data["business_document"].name = "default_document.pdf"  # 기본 파일 이름 설정
+
+        return super().create(validated_data)
