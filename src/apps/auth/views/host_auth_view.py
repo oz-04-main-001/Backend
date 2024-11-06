@@ -25,6 +25,9 @@ class HostRegistrationAPIView(APIView):
         if serializer.is_valid():
             # 여기서 자동으로 pending 상태로 저장
             serializer.save(user=request.user, verification_status="pending")  # 기본값으로 pending 설정
+            user = request.user
+            user.user_type = "host"
+            user.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

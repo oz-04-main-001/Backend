@@ -9,6 +9,7 @@ from faker import Faker
 
 from apps.accommodations.models import (
     Accommodation,
+    Accommodation_Image,
     AccommodationType,
     GPS_Info,
     RefundPolicy,
@@ -97,13 +98,70 @@ class Command(BaseCommand):
         self.create_accommodation_for_superuser(fake, business_user)
 
     def create_accommodation_for_superuser(self, fake, business_user):
+
+        # 기본 숙소 생성
+        self.create_single_accommodation(
+            fake,
+            business_user,
+            "효리네 민박",
+            "서울특별시 강남구 테헤란로 123",
+            "강남구",
+            "테헤란로",
+            127.0395,
+            37.5011,
+        )
+
+        # 서울, 부산, 경기도에 각각 3개의 추가 숙소 생성
+        cities_data = [
+            {
+                "city": "서울",
+                "locations": [
+                    ("용산구", "청파로", 126.9658, 37.5326),
+                    ("종로구", "종로", 126.9784, 37.5665),
+                    ("마포구", "홍대입구", 126.9237, 37.5563),
+                ],
+            },
+            {
+                "city": "부산",
+                "locations": [
+                    ("해운대구", "해운대로", 129.1587, 35.1587),
+                    ("부산진구", "서면로", 129.0592, 35.1576),
+                    ("남구", "광안리 해변로", 129.1211, 35.1533),
+                ],
+            },
+            {
+                "city": "경기도",
+                "locations": [
+                    ("성남시", "분당구 야탑로", 127.1298, 37.4126),
+                    ("수원시", "팔달구 매산로", 127.0149, 37.2810),
+                    ("고양시", "일산동구 정발산로", 126.7731, 37.6584),
+                ],
+            },
+        ]
+
+        for city_data in cities_data:
+            for location in city_data["locations"]:
+                district, road_name, lng, lat = location
+                name = f"{city_data['city']} {fake.company()} 숙소"
+                self.create_single_accommodation(
+                    fake,
+                    business_user,
+                    name,
+                    f"{city_data['city']} {district} {road_name}",
+                    district,
+                    road_name,
+                    lng,
+                    lat,
+                )
+
+    def create_single_accommodation(self, fake, business_user, name, address, states, road_name, lng, lat):
         accommodation = Accommodation.objects.create(
             host=business_user,
-            name="Admin's Luxury Hotel",
+            name=name,
             phone_number=business_user.business_phonenumber,
             description=fake.paragraph(),
             rules="No smoking, No pets, Check-in after 2 PM, Check-out before 11 AM",
-            average_rating=4.8,
+            average_rating=round(random.uniform(3.5, 5.0), 1),
             is_active=True,
             created_at=timezone.now(),
             updated_at=timezone.now(),
@@ -113,29 +171,60 @@ class Command(BaseCommand):
 
         GPS_Info.objects.create(
             accommodation=accommodation,
-            city="서울",
-            states="강남구",
-            road_name="테헤란로",
-            address="서울특별시 강남구 테헤란로 123",
-            location=Point(127.0395, 37.5011),  # 서울 강남구의 대략적인 좌표
+            city=address.split()[0],  # 도시 이름
+            states=states,
+            road_name=road_name,
+            address=address,
+            location=Point(lng, lat),
         )
 
-        RefundPolicy.objects.create(
-            accommodation=accommodation,
-            seven_days_before=100,
-            five_days_before=80,
-            three_days_before=50,
-            one_day_before=20,
-            same_day=0,
-        )
+        self.add_accommodation_images(accommodation)
 
         print(f"Accommodation created for superuser: {accommodation.name}")
 
         # 슈퍼유저의 숙소에 대한 객실 생성
         self.create_rooms_for_superuser_accommodation(fake, accommodation)
 
+    def add_accommodation_images(self, accommodation):
+        # 이미지 URL 목록
+        room_images = [
+            "https://oz-main-001-media.s3.amazonaws.com/media/accommodation_images/hotel-1330834_1280.jpg",
+            "https://oz-main-001-media.s3.amazonaws.com/media/accommodation_images/images_1.jpeg",
+            "https://oz-main-001-media.s3.amazonaws.com/media/accommodation_images/images_2.jpeg",
+            "https://oz-main-001-media.s3.amazonaws.com/media/accommodation_images/kitchen-2165756_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/168172493522494335.avif",
+            "s3://oz-main-001-media/media/accommodation_images/다운로드12.jpeg",
+            "s3://oz-main-001-media/media/accommodation_images/exterior-3558640_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/house-1867187_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/kitchen-2165756_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/inner-space-1026452_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/window-3178666_1280.jpg",
+        ]
+
+        for idx, image_url in enumerate(room_images):
+            Accommodation_Image.objects.create(
+                accommodation=accommodation,
+                image=image_url,
+                is_representative=(idx == 0),  # 첫 번째 이미지를 대표 이미지로 설정
+            )
+            print(f"Image added for accommodation: {image_url}")
+
     def create_rooms_for_superuser_accommodation(self, fake, accommodation):
         room_types = ["Standard", "Deluxe", "Suite", "Executive"]
+
+        room_images = [
+            "https://oz-main-001-media.s3.amazonaws.com/media/accommodation_images/hotel-1330834_1280.jpg",
+            "https://oz-main-001-media.s3.amazonaws.com/media/accommodation_images/images_1.jpeg",
+            "https://oz-main-001-media.s3.amazonaws.com/media/accommodation_images/images_2.jpeg",
+            "https://oz-main-001-media.s3.amazonaws.com/media/accommodation_images/kitchen-2165756_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/168172493522494335.avif",
+            "s3://oz-main-001-media/media/accommodation_images/다운로드12.jpeg",
+            "s3://oz-main-001-media/media/accommodation_images/exterior-3558640_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/house-1867187_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/kitchen-2165756_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/inner-space-1026452_1280.jpg",
+            "s3://oz-main-001-media/media/accommodation_images/window-3178666_1280.jpg",
+        ]
 
         for room_type in room_types:
             room = Room.objects.create(
@@ -152,15 +241,14 @@ class Command(BaseCommand):
             )
 
             RoomType.objects.create(room=room, is_customized=False, type_name=room_type)
-
             RoomInventory.objects.create(room=room, count_room=random.randint(5, 20))
 
             # 객실 이미지 추가
             for i in range(3):
                 Room_Image.objects.create(
                     room=room,
-                    image=f"room_images/{room.name.lower().replace(' ', '_')}_{i+1}.jpg",
-                    is_representative=(i == 0),
+                    image=room_images[i % len(room_images)],  # 순환하여 이미지 선택
+                    is_representative=(i == 0),  # 첫 번째 이미지를 대표 이미지로 설정
                 )
 
             print(f"Room created for superuser's accommodation: {room.name}")
