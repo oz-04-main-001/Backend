@@ -9,10 +9,10 @@ from faker import Faker
 
 from apps.accommodations.models import (
     Accommodation,
+    Accommodation_Image,
     AccommodationType,
     GPS_Info,
     RefundPolicy,
-    Accommodation_Image,
 )
 from apps.amenities.models import AccommodationAmenity, Amenity, Option, RoomOption
 from apps.bookings.models import Booking

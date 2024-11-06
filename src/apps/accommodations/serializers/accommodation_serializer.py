@@ -188,6 +188,7 @@ class RefundPolicySerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(f"{field}: 환불 비율은 0에서 100 사이여야 합니다.")
         return data
 
+
 class AccommodationSerializer(serializers.ModelSerializer):
     host = serializers.PrimaryKeyRelatedField(read_only=True)
     phone_number = serializers.CharField(read_only=True)
@@ -246,7 +247,6 @@ class AccommodationSerializer(serializers.ModelSerializer):
             instance.phone_number = instance.host.user.phone_number
         instance.save()
         return instance
-
 
 
 # 업데이트용 시리얼라이저들
